@@ -128,13 +128,33 @@ function App(){
     <div className="sidebar-bottom"><div className="mini-note"><Sparkles size={16}/><b>Знаходь цікаве</b><p>Каталог корисних товарів з Amazon в одному місці.</p></div><span>© 2026 amazonsan</span></div>
    </aside>
    <main className="main">
-    {view==='catalog'&&<><section className="hero"><div className="hero-copy"><span className="eyebrow"><Sparkles size={14}/> РОЗУМНИЙ ПОШУК ТОВАРІВ</span><h1>Знаходь те,<br/><em>що надихає.</em></h1><p>Добірка цікавих товарів з Amazon. Переглядай, порівнюй характеристики та зберігай улюблене.</p><button className="btn light" onClick={()=>{setCategory('Усі категорії');setOnlyFav(false)}}>Переглянути каталог <ChevronRight size={17}/></button></div><div className="hero-art"><div className="orb orb1"></div><div className="orb orb2"></div><div className="hero-card hc1"><Package/><span>Твій каталог</span><b>∞ можливостей</b></div><div className="hero-card hc2"><Heart fill="#fb7185" color="#fb7185"/><span>Обране</span><b>Все важливе поруч</b></div><div className="hero-ring"></div><div className="hero-letter">a.</div></div></section>
-     <div className="quick-stats"><div><b>{products.filter(p=>p.status==='published').length}</b><span>товарів у каталозі</span></div><div><b>{categories.length}</b><span>категорій</span></div><div><b>{favorites.length}</b><span>в обраному</span></div></div>
-     <section className="catalog-section"><div className="section-head"><div><span className="eyebrow">ВИБІР AMAZONSAN</span><h2>{onlyFav?'Обране':category==='Усі категорії'?'Каталог товарів':category}</h2><p>{visible.length} товарів знайдено</p></div><div className="filters"><select value={sort} onChange={e=>setSort(e.target.value)}><option value="new">Спочатку нові</option><option value="priceUp">Спочатку дешевші</option><option value="priceDown">Спочатку дорожчі</option><option value="name">За назвою</option></select><button className="filter-btn" onClick={()=>{setCategory('Усі категорії');setSubcategory('Усі підкатегорії');setOnlyFav(false);setQuery('')}}><SlidersHorizontal size={16}/> Скинути</button></div></div>
-     {subcategory!=='Усі підкатегорії'&&<div className="active-filter">Підкатегорія: {subcategory}<button onClick={()=>setSubcategory('Усі підкатегорії')}><X size={14}/></button></div>}
-     {visible.length===0?<div className="empty"><div className="empty-icon"><Package/></div><h3>Поки нічого не знайдено</h3><p>Спробуй змінити пошук або вибрати іншу категорію.</p><button className="btn secondary" onClick={()=>{setQuery('');setCategory('Усі категорії');setSubcategory('Усі підкатегорії');setOnlyFav(false)}}>Показати всі товари</button></div>:
-     <div className="product-grid">{visible.map(p=><article className="product-card" key={p.id}><div className="product-image" onClick={()=>setSelected(p)}>{p.image_url?<img src={p.image_url} alt={p.title} loading="lazy" onError={e=>e.currentTarget.style.display='none'}/>:<div className="image-placeholder"><Package/></div>}{p.is_new&&<span className="tag new">НОВИНКА</span>}{p.is_popular&&<span className="tag popular">ПОПУЛЯРНЕ</span>}<button className={`fav-btn ${favorites.includes(p.id)?'liked':''}`} onClick={e=>{e.stopPropagation();toggleFavorite(p.id)}}><Heart size={18} fill={favorites.includes(p.id)?'currentColor':'none'}/></button></div><div className="product-info"><span className="product-category">{p.category}{p.subcategory?' · '+p.subcategory:''}</span><h3 onClick={()=>setSelected(p)}>{p.title}</h3><p>{p.description||'Опис товару буде додано.'}</p><div className="product-bottom"><div><b>{money(p.price_uah)}</b>{p.price_usd&&<small>${p.price_usd} на Amazon</small>}</div><button className="arrow-btn" onClick={()=>setSelected(p)}><ChevronRight size={19}/></button></div>{isAdmin&&<div className="admin-inline"><button onClick={()=>startEdit(p)}><Pencil size={14}/> Редагувати</button><button onClick={()=>deleteProduct(p.id)}><Trash2 size={14}/> Видалити</button></div>}</div></article>)}</div>}
-     </section>
+    {view==='catalog'&&<>
+<section className="hero hero-banner">
+  <img
+    className="hero-background"
+    src="/Baner.webp"
+    alt="amazonsan — сучасний каталог товарів за вигідними цінами"
+  />
+  <div className="hero-overlay">
+    <span className="eyebrow">✦ AMAZONSAN · ВИБІР РОЗУМНИХ ПОКУПОК</span>
+    <h1>Технології та товари<br/>
+      <em>за вигідними цінами!</em>
+    </h1>
+    <p>Відкривай новинки, порівнюй характеристики та знаходь цікаві пропозиції.</p>
+    <div className="hero-benefits">
+      <span>✦ Вигідні ціни</span>
+      <span>✦ Цікаві новинки</span>
+      <span>✦ Великий вибір</span>
+    </div>
+    <button className="btn light" onClick={() => {
+      setCategory('Усі категорії');
+      setOnlyFav(false);
+      setView('catalog');
+    }}>
+      Переглянути каталог <ChevronRight size={17}/>
+    </button>
+  </div>
+</section>
     </>}
     {view==='account'&&<section className="account-page"><span className="eyebrow">ОСОБИСТИЙ ПРОСТІР</span><h1>Мій кабінет</h1><div className="account-card"><div className="avatar">{session?.user?.email?.[0]?.toUpperCase()||'A'}</div><div><h3>{session?.user?.email}</h3><p>{isAdmin?'Адміністратор':'Користувач amazonsan'}</p></div></div><div className="account-actions"><button className="btn secondary" onClick={()=>{setOnlyFav(true);setView('catalog')}}><Heart/> Моє обране ({favorites.length})</button>{isAdmin&&<button className="btn secondary" onClick={()=>setSettingsOpen(true)}><Settings/> Налаштування сайту</button>}<button className="btn secondary" onClick={signOut}><LogOut/> Вийти</button></div>{!configured&&<p className="setup-warning">Демонстраційний режим: підключи Supabase, щоб зберігати профіль та обране між пристроями.</p>}</section>}
     {isAdmin&&<div className="admin-bar"><div><ShieldCheck size={17}/> Панель адміністратора</div><div className="admin-tools"><button className="btn primary small" onClick={()=>{setEditing(null);setForm(emptyForm);setAdminOpen(true)}}><Plus size={16}/> Додати товар</button><button className="btn secondary small" onClick={exportJSON}><Download size={16}/> Експорт JSON</button><label className="btn secondary small file-btn"><Upload size={16}/> Імпорт JSON<input type="file" accept=".json,application/json" onChange={e=>e.target.files?.[0]&&importJSON(e.target.files[0])}/></label></div></div>}
