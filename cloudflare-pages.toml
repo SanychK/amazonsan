@@ -1,0 +1,3 @@
+# Reference build settings for Cloudflare Pages
+# Build command: npm run build
+# Build output directory: dist
