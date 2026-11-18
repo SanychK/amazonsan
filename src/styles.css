@@ -96,3 +96,62 @@
     font-size: 34px;
   }
 }
+
+/* Виправлення інтерактивних зон банера */
+.hero-interactive {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.hero-interactive .hero-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+
+.hero-hotspot {
+  position: absolute;
+  z-index: 5;
+  display: block;
+  padding: 0;
+  margin: 0;
+  border: 0 !important;
+  outline: 0;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.hero-hotspot:hover,
+.hero-hotspot:focus,
+.hero-hotspot:active {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.hero-banner {
+  position: relative;
+}
+
+.hero-banner .hero-interactive {
+  position: absolute;
+  inset: 0;
+}
+
+@media (max-width: 650px) {
+  .hero-banner {
+    min-height: 320px;
+  }
+}
