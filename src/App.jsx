@@ -63,7 +63,7 @@ function App(){
    if(!form.title.trim()){notify('Вкажи назву товару.');return}
    if(!configured){notify('Для збереження товарів налаштуй Supabase за інструкцією в README.');return}
    setLoading(true)
-   const payload={...form,price_uah:form.price_uah===''?null:Number(form.price_uah),price_usd:form.price_usd===''?null:Number(form.price_usd),specs:form.specs?form.specs.split('\\n').filter(Boolean):[],created_by:session.user.id}
+   const payload={...form,price_uah:form.price_uah===''?null:Number(form.price_uah),price_usd:form.price_usd===''?null:Number(form.price_usd),specs:form.specs?form.specs.split('\n').filter(Boolean):[],created_by:session.user.id}
    let result
    if(editing) result=await supabase.from('products').update(payload).eq('id',editing)
    else result=await supabase.from('products').insert(payload)
@@ -71,7 +71,7 @@ function App(){
    if(result.error){notify(result.error.message);return}
    setAdminOpen(false);setEditing(null);setForm(emptyForm);await reloadProducts();notify('Товар збережено.')
  }
- const startEdit=p=>{setEditing(p.id);setForm({...emptyForm,...p,price_uah:p.price_uah??'',price_usd:p.price_usd??'',specs:Array.isArray(p.specs)?p.specs.join('\\n'):p.specs||''});setAdminOpen(true)}
+ const startEdit=p=>{setEditing(p.id);setForm({...emptyForm,...p,price_uah:p.price_uah??'',price_usd:p.price_usd??'',specs:Array.isArray(p.specs)?p.specs.join('\n'):p.specs||''});setAdminOpen(true)}
  const deleteProduct=async id=>{
    if(!confirm('Видалити цей товар?'))return
    const {error}=await supabase.from('products').delete().eq('id',id)
@@ -100,6 +100,37 @@ function App(){
  }
  const setField=(k,v)=>setForm(f=>({...f,[k]:v}))
  const currentSubs=categories.find(c=>c.name===category)?.subs||[]
+ const openHeroCategory = name => {
+   setCategory(name)
+   setSubcategory('Усі підкатегорії')
+   setOnlyFav(false)
+   setView('catalog')
+   setSelected(null)
+   setSidebar(false)
+   window.scrollTo({top:0,behavior:'smooth'})
+ }
+ const heroTiles = [
+   {name:'Усі категорії',left:2.5,top:49.3,width:15.0,height:11.3},
+   {name:'Електроніка',left:18.8,top:49.3,width:14.9,height:11.3},
+   {name:'Дім і кухня',left:34.8,top:49.3,width:14.6,height:11.3},
+   {name:'Одяг і взуття',left:50.6,top:49.3,width:14.7,height:11.3},
+   {name:'Краса та догляд',left:66.5,top:49.3,width:14.9,height:11.3},
+   {name:'Здоров’я',left:82.6,top:49.3,width:14.9,height:11.3},
+   {name:'Спорт і туризм',left:2.5,top:62.0,width:15.0,height:11.1},
+   {name:'Автотовари',left:18.8,top:62.0,width:14.9,height:11.1},
+   {name:'Дитячі товари',left:34.8,top:62.0,width:14.6,height:11.1},
+   {name:'Іграшки та хобі',left:50.6,top:62.0,width:14.7,height:11.1},
+   {name:'Інструменти',left:66.5,top:62.0,width:14.9,height:11.1},
+   {name:'Товари для тварин',left:82.6,top:62.0,width:14.9,height:11.1},
+   {name:'Офіс і канцелярія',left:2.5,top:74.5,width:15.0,height:11.0},
+   {name:'Продукти та напої',left:18.8,top:74.5,width:14.9,height:11.0},
+   {name:'Музика',left:34.8,top:74.5,width:14.6,height:11.0},
+   {name:'Сад і город',left:50.6,top:74.5,width:14.7,height:11.0},
+   {name:'Ювелірні вироби',left:66.5,top:74.5,width:14.9,height:11.0},
+   {name:'Багаж і подорожі',left:82.6,top:74.5,width:14.9,height:11.0},
+   {name:'Товари для бізнесу',left:2.5,top:86.6,width:15.0,height:11.0},
+   {name:'Інше',left:18.8,top:86.6,width:14.9,height:11.0},
+ ]
  const adminForm=<div className="modal wide"><div className="modal-head"><div><span className="eyebrow">КЕРУВАННЯ КАТАЛОГОМ</span><h2>{editing?'Редагувати товар':'Додати товар'}</h2></div><button className="icon-btn" onClick={()=>setAdminOpen(false)}><X/></button></div>
    <div className="form-grid">
     <label className="full">Назва товару<input value={form.title} onChange={e=>setField('title',e.target.value)} placeholder="Наприклад, бездротові навушники"/></label>
@@ -130,29 +161,28 @@ function App(){
    <main className="main">
     {view==='catalog'&&<>
 <section className="hero hero-banner">
-  <img
-    className="hero-background"
-    src="/Baner.webp"
-    alt="amazonsan — сучасний каталог товарів за вигідними цінами"
-  />
-  <div className="hero-overlay">
-    <span className="eyebrow">✦ AMAZONSAN · ВИБІР РОЗУМНИХ ПОКУПОК</span>
-    <h1>Технології та товари<br/>
-      <em>за вигідними цінами!</em>
-    </h1>
-    <p>Відкривай новинки, порівнюй характеристики та знаходь цікаві пропозиції.</p>
-    <div className="hero-benefits">
-      <span>✦ Вигідні ціни</span>
-      <span>✦ Цікаві новинки</span>
-      <span>✦ Великий вибір</span>
-    </div>
-    <button className="btn light" onClick={() => {
-      setCategory('Усі категорії');
-      setOnlyFav(false);
-      setView('catalog');
-    }}>
-      Переглянути каталог <ChevronRight size={17}/>
-    </button>
+  <div className="hero-interactive">
+    <img
+      className="hero-background"
+      src="/Baner.webp"
+      alt="amazonsan — інтерактивний каталог товарів"
+    />
+    {heroTiles.map(tile => (
+      <button
+        key={tile.name}
+        type="button"
+        className="hero-hotspot"
+        aria-label={tile.name}
+        title={tile.name}
+        style={{
+          left: `${tile.left}%`,
+          top: `${tile.top}%`,
+          width: `${tile.width}%`,
+          height: `${tile.height}%`,
+        }}
+        onClick={() => openHeroCategory(tile.name)}
+      />
+    ))}
   </div>
 </section>
     </>}
