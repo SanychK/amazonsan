@@ -153,3 +153,20 @@
     min-height: 0 !important;
   }
 }
+
+/* AMAZONSAN — прибираємо затемнення банера */
+.hero-banner::after {
+  display: none !important;
+  content: none !important;
+}
+
+.hero-banner .hero-background {
+  object-fit: contain !important;
+  object-position: center center !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+.hero-banner .hero-interactive {
+  background: transparent !important;
+}
