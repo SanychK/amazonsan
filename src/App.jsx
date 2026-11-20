@@ -231,6 +231,7 @@ function App(){
   setOnlyFav(false)
   setBudgetCap('')
   setStockFilter('all')
+  setCategoryFocus(false)
   window.scrollTo({top:0,behavior:'smooth'})
 }}><span className="brand-mark">a<span>•</span></span><span>amazonsan<small>КАТАЛОГ ТОВАРІВ</small></span></button>
    <div className="searchbox"><Search size={19}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Знайти товар, категорію або бренд..."/><kbd>⌕</kbd></div>
