@@ -576,48 +576,6 @@ footer{color:#7c8eaa}
 @media(prefers-reduced-motion:reduce){
   .hero-banner .hero-background,.future-product,.future-stats>div,.btn,.account-btn{transition:none!important}
 }
-
-/* AMAZONSAN — refined premium hero, preserve all button effects */
-.hero-banner .hero-overlay {
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.34), rgba(255,255,255,.10)),
-    radial-gradient(ellipse at 10% 10%, rgba(255,255,255,.32), transparent 72%);
-  border: 1px solid rgba(255,255,255,.42);
-  border-radius: 22px;
-  box-shadow:
-    0 18px 48px rgba(38,67,117,.10),
-    inset 0 1px 0 rgba(255,255,255,.48);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-}
-
-.hero-banner h1 {
-  text-shadow: 0 2px 18px rgba(40,75,130,.10);
-}
-
-.hero-banner p {
-  color: #506987;
-  font-weight: 500;
-}
-
-.hero-benefits span {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 12px;
-  border: 1px solid rgba(91,132,190,.18);
-  border-radius: 999px;
-  background: rgba(255,255,255,.52);
-  box-shadow: 0 4px 14px rgba(52,91,145,.06);
-  color: #45688f;
-}
-
-@media (max-width: 760px) {
-  .hero-banner .hero-overlay {
-    border-radius: 17px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-
   .hero-benefits span {
     padding: 7px 10px;
     font-size: 11px;
