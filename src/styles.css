@@ -236,3 +236,100 @@ footer{color:#8493aa}footer .footer-brand{color:#1e3555}footer button{color:#617
 @media(max-width:760px){.promo-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.smart-callout{align-items:flex-start;flex-direction:column;padding:19px}.engage-toolbar{gap:7px}.engage-chip{font-size:10px;padding:9px 11px}.feature-switches{grid-template-columns:1fr}.promo-section{padding:13px}.promo-strip img{height:85px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 .tag.editorial{top:85px;background:#e8f5ff;color:#2474a7}.tag.exclusive{top:110px;background:#f3eaff;color:#8054b2}.tag.daydeal{top:135px;background:#fff1d9;color:#a66a1d}
+
+/* Mobile header: visible login button without zoom */
+@media (max-width: 760px) {
+  .topbar {
+    height: auto;
+    min-height: 112px;
+  }
+
+  .top-inner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 8px 7px;
+    padding: 9px 12px;
+  }
+
+  .mobile-menu {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .brand {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: start;
+    min-width: 0;
+    font-size: 15px;
+  }
+
+  .top-actions {
+    grid-column: 3;
+    grid-row: 1;
+    margin-left: 0;
+    gap: 4px;
+    justify-self: end;
+  }
+
+  .top-actions .icon-btn {
+    padding: 7px;
+  }
+
+  .account-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 9px;
+    white-space: nowrap;
+    border: 1px solid #dfe6f2;
+  }
+
+  .account-btn span {
+    display: inline;
+    font-size: 11px;
+  }
+
+  .searchbox {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .top-inner {
+    padding-left: 8px;
+    padding-right: 8px;
+    gap: 7px 4px;
+  }
+
+  .brand {
+    font-size: 13px;
+    gap: 4px;
+  }
+
+  .brand-mark {
+    width: 28px;
+    height: 28px;
+    font-size: 19px;
+  }
+
+  .brand small {
+    font-size: 6px;
+    letter-spacing: 1px;
+  }
+
+  .account-btn {
+    padding: 7px 7px;
+    gap: 3px;
+  }
+
+  .account-btn span {
+    font-size: 10px;
+  }
+}
