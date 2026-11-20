@@ -11,7 +11,7 @@ function App(){
  const [sort,setSort]=useState('new'),[onlyFav,setOnlyFav]=useState(false),[view,setView]=useState('catalog'),[selected,setSelected]=useState(null)
  const [authOpen,setAuthOpen]=useState(false),[authMode,setAuthMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authError,setAuthError]=useState('')
  const [adminOpen,setAdminOpen]=useState(false),[editing,setEditing]=useState(null),[form,setForm]=useState(emptyForm),[notice,setNotice]=useState(''),[loading,setLoading]=useState(false)
- const [sidebar,setSidebar]=useState(false),[showPassword,setShowPassword]=useState(false),[settingsOpen,setSettingsOpen]=useState(false),[siteIcon,setSiteIcon]=useState('/favicon.svg')
+ const [sidebar,setSidebar]=useState(false),[categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setShowPassword]=useState(false),[settingsOpen,setSettingsOpen]=useState(false),[siteIcon,setSiteIcon]=useState('/favicon.svg')
  const [inquiryOpen,setInquiryOpen]=useState(false),[inquiryForm,setInquiryForm]=useState({name:'',contact:'',message:''}),[inquiryBusy,setInquiryBusy]=useState(false),[inquiries,setInquiries]=useState([])
  const [compare,setCompare]=useState([]),[recentlyViewed,setRecentlyViewed]=useState(()=>{try{return JSON.parse(localStorage.getItem('amazonsan_recent')||'[]')}catch{return []}}),[smartFinder,setSmartFinder]=useState(false),[finderBudget,setFinderBudget]=useState(''),[budgetCap,setBudgetCap]=useState(''),[finderNeed,setFinderNeed]=useState(''),[finderFeature,setFinderFeature]=useState(''),[featureSettings,setFeatureSettings]=useState(()=>{try{return {...{new:true,bestsellers:true,deals:true,recommendations:true,recent:true,smart:true},...JSON.parse(localStorage.getItem('amazonsan_sections')||'{}')}}catch{return {new:true,bestsellers:true,deals:true,recommendations:true,recent:true,smart:true}}})
  const isAdmin=Boolean(profile?.is_admin)
@@ -169,14 +169,20 @@ function App(){
 
  const currentSubs=categories.find(c=>c.name===category)?.subs||[]
  const openHeroCategory = name => {
-   setCategory(name)
-   setSubcategory('Усі підкатегорії')
-   setOnlyFav(false)
-   setView('catalog')
-   setSelected(null)
-   setSidebar(false)
-   window.scrollTo({top:0,behavior:'smooth'})
- }
+  setCategory(name)
+  setSubcategory('Усі підкатегорії')
+  setOnlyFav(false)
+  setView('catalog')
+  setSelected(null)
+  setSidebar(false)
+  setCategoryMenuOpen(false)
+  window.setTimeout(() => {
+    document.querySelector('.catalog-section')?.scrollIntoView({
+      behavior:'smooth',
+      block:'start'
+    })
+  }, 100)
+}
  const heroTiles = [
    {name:'Усі категорії',left:2.5,top:49.3,width:15.0,height:11.3},
    {name:'Електроніка',left:18.8,top:49.3,width:14.9,height:11.3},
@@ -237,7 +243,9 @@ function App(){
     <h1>Більше можливостей <em>для тебе</em></h1>
     <p>Знаходь цікаві товари з Amazon у зручному каталозі AMAZONSAN.</p>
     <div className="hero-benefits"><span>✓ Зручний пошук</span><span>✓ Обране</span><span>✓ Нові надходження</span></div>
-    <button className="btn primary hero-cta" onClick={() => {setCategory('Усі категорії');setSubcategory('Усі підкатегорії');document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'});}}>Перейти до каталогу <ChevronRight size={17}/></button>
+    <button className="btn primary hero-cta" onClick={() => setCategoryMenuOpen(true)}>
+  Каталог товарів <ChevronRight size={17}/>
+</button>
   </div>
 </section>
       <div className="future-stats">
@@ -286,6 +294,48 @@ function App(){
     <footer><div className="footer-brand">amazonsan<span>•</span></div><p>Каталог товарів для зручного пошуку та вибору.</p><div className="footer-links"><button onClick={()=>notify('Зв’язок: додай свою контактну пошту в налаштуваннях проєкту.')}>Контакти</button><button onClick={()=>notify('Політика конфіденційності: додай власний документ перед публічним запуском.')}>Конфіденційність</button><button onClick={()=>notify('amazonsan — незалежний каталог, не пов’язаний з Amazon.')}>Про проєкт</button></div><small>amazonsan не є офіційним сайтом Amazon і не афілійований з Amazon.</small></footer>
    </main>
   </div>
+  {categoryMenuOpen&&
+  <div className="overlay category-menu-overlay" onClick={()=>setCategoryMenuOpen(false)}>
+    <div className="category-menu" onClick={e=>e.stopPropagation()}>
+      <div className="category-menu-head">
+        <div>
+          <span className="eyebrow">AMAZONSAN · DISCOVER</span>
+          <h2>Обери свій напрям</h2>
+          <p>Знайди потрібні товари серед наших категорій</p>
+        </div>
+        <button className="icon-btn" onClick={()=>setCategoryMenuOpen(false)} aria-label="Закрити">
+          <X/>
+        </button>
+      </div>
+
+      <div className="category-menu-grid">
+        <button className="category-menu-item category-all" onClick={()=>openHeroCategory('Усі категорії')}>
+          <span className="category-menu-icon"><LayoutGrid/></span>
+          <span><b>Усі категорії</b><small>Переглянути весь каталог</small></span>
+          <ChevronRight/>
+        </button>
+
+        {categories.map((c,i)=>(
+          <button
+            key={c.name}
+            className="category-menu-item"
+            style={{'--menu-delay':`${i*25}ms`}}
+            onClick={()=>openHeroCategory(c.name)}
+          >
+            <span className="category-menu-icon">{c.icon}</span>
+            <span><b>{c.name}</b><small>{c.subs.length} підкатегорій</small></span>
+            <ChevronRight/>
+          </button>
+        ))}
+      </div>
+
+      <div className="category-menu-footer">
+        <Sparkles size={16}/>
+        <span>Обирай, переглядай та зберігай цікаві товари</span>
+      </div>
+    </div>
+  </div>
+}
   {selected&&<div className="overlay" onClick={()=>setSelected(null)}><div className="modal detail-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><span className="eyebrow">ДЕТАЛІ ТОВАРУ</span><button className="icon-btn" onClick={()=>setSelected(null)}><X/></button></div><div className="detail-grid"><div className="detail-image">{selected.image_url?<img src={selected.image_url} alt={selected.title}/>:<Package/>}</div><div><span className="product-category">{selected.category} · {selected.subcategory}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="detail-price">{selected.original_price_uah>selected.price_uah&&<del className="old-price">{money(selected.original_price_uah)}</del>}{money(selected.price_uah)}{selected.price_usd&&<small>${selected.price_usd} на Amazon</small>}</div>{Array.isArray(selected.specs)&&selected.specs.length>0&&<ul className="spec-list">{selected.specs.map(s=><li>{s}</li>)}</ul>}<div className="detail-actions"><button className="btn secondary" onClick={()=>toggleCompare(selected.id)}>Порівняти</button><button className="btn secondary" onClick={()=>toggleFavorite(selected.id)}><Heart size={17}/> Зберегти</button><button className="btn primary" onClick={()=>setInquiryOpen(true)}><Mail size={16}/> Зв’язатися з власником</button>{selected.amazon_url&&<a className="btn secondary" href={selected.amazon_url} target="_blank" rel="noreferrer">Джерело товару <ExternalLink size={16}/></a>}</div><p className="inquiry-note">Це інформаційний каталог. Надсилання звернення не є оформленням замовлення або оплатою.</p></div></div></div></div>}
   {smartFinder&&<div className="overlay" onClick={()=>setSmartFinder(false)}><div className="modal auth-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">SMART FINDER</span><h2>Розумний підбір товару</h2></div><button className="icon-btn" onClick={()=>setSmartFinder(false)}><X/></button></div><label>Для чого шукаєш товар?<select value={finderNeed} onChange={e=>setFinderNeed(e.target.value)}><option value="">Будь-яке призначення</option>{categories.map(c=><option value={c.name}>{c.name}</option>)}</select></label><label>Бюджет до (грн)<input type="number" min="0" value={finderBudget} onChange={e=>setFinderBudget(e.target.value)} placeholder="Наприклад, 3000"/></label><label>Що найважливіше?<input value={finderFeature} onChange={e=>setFinderFeature(e.target.value)} placeholder="Наприклад, автономність, компактність"/></label><p className="muted">Підбір використовує наявні категорії, ціни та описи каталогу. Це базовий фільтр, не зовнішній AI-сервіс.</p><button className="btn primary full-btn" onClick={()=>{setCategory(finderNeed||'Усі категорії');setSubcategory('Усі підкатегорії');setQuery(finderFeature);setBudgetCap(finderBudget);setSort('priceUp');setOnlyFav(false);setSmartFinder(false);setView('catalog');setTimeout(()=>document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'}),100)}}>Показати відповідні товари</button></div></div>}
   {inquiryOpen&&selected&&<div className="overlay" onClick={()=>setInquiryOpen(false)}><div className="modal auth-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">ЗВЕРНЕННЯ ДО ВЛАСНИКА</span><h2>Зацікавив товар?</h2></div><button className="icon-btn" onClick={()=>setInquiryOpen(false)}><X/></button></div><p><b>{selected.title}</b><br/><span className="muted">{money(selected.price_uah)} · ціна для ознайомлення на момент звернення</span></p><label>Ваше ім’я<input value={inquiryForm.name} onChange={e=>setInquiryForm(f=>({...f,name:e.target.value}))} maxLength={100} placeholder="Як до вас звертатися"/></label><label>Телефон або email для зв’язку<input value={inquiryForm.contact} onChange={e=>setInquiryForm(f=>({...f,contact:e.target.value}))} maxLength={180} placeholder="Номер телефону або email"/></label><label>Повідомлення (необов’язково)<textarea rows="3" value={inquiryForm.message} onChange={e=>setInquiryForm(f=>({...f,message:e.target.value}))} maxLength={1000} placeholder="Ваше запитання щодо товару"/></label><p className="inquiry-note">Надсилаючи звернення, ви погоджуєтеся, що власник каталогу використає ці контактні дані лише для відповіді на ваш запит. Звернення не є замовленням і не передбачає оплату на сайті.</p><button className="btn primary full-btn" disabled={inquiryBusy} onClick={sendInquiry}>{inquiryBusy?'Надсилання…':'Надіслати звернення'}</button></div></div>}
