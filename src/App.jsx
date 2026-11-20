@@ -243,7 +243,7 @@ function App(){
 {categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>openHeroCategory(c.name)}><span className="cat-icon">{c.icon}</span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{category===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>{setSubcategory(s);setCategoryFocus(true);setSidebar(false);window.scrollTo({top:0,behavior:'smooth'})}}>{s}</button>)}</div>}</div>)}
     <div className="sidebar-bottom"><div className="mini-note"><Sparkles size={16}/><b>Знаходь цікаве</b><p>Каталог корисних товарів з Amazon в одному місці.</p></div><span>© 2026 amazonsan</span></div>
    </aside>
-   <main className="main">
+   <main className={`main ${categoryFocus?'category-focus':''}`}>
     {view==='catalog'&&<>
 <section className="hero hero-banner" aria-label="Ласкаво просимо до AMAZONSAN">
   <img className="hero-background" src="/hero-showcase.png" alt="Добірка сучасної електроніки та товарів" fetchPriority="high" />
