@@ -23,25 +23,55 @@ function App(){
    return ()=>subscription.unsubscribe()
  },[])
  useEffect(()=>{
-   if(!configured) return
-   const loadCatalog=async()=>{
-     const publicProducts=supabase.from('products').select('*').eq('status','published').order('created_at',{ascending:false})
-     if(!session){
-       setProfile(null);setFavorites([])
-       const {data,error}=await publicProducts
-       if(!error&&data)setProducts(data)
-       return
-     }
-     const [p,f,pr]=await Promise.all([
-       supabase.from('profiles').select('*').eq('id',session.user.id).maybeSingle(),
-       supabase.from('favorites').select('product_id').eq('user_id',session.user.id),
-       publicProducts
-     ])
-     setProfile(p.data||null);setFavorites((f.data||[]).map(x=>x.product_id))
-     if(!pr.error&&pr.data)setProducts(pr.data)
-   }
-   loadCatalog()
- },[session])
+  if(!configured) return
+
+  const loadCatalog=async()=>{
+    if(!session){
+      setProfile(null)
+      setFavorites([])
+
+      const {data,error}=await supabase
+        .from('products')
+        .select('*')
+        .eq('status','published')
+        .order('created_at',{ascending:false})
+
+      if(!error&&data)setProducts(data)
+      return
+    }
+
+    const [p,f]=await Promise.all([
+      supabase.from('profiles')
+        .select('*')
+        .eq('id',session.user.id)
+        .maybeSingle(),
+
+      supabase.from('favorites')
+        .select('product_id')
+        .eq('user_id',session.user.id)
+    ])
+
+    const nextProfile=p.data||null
+
+    setProfile(nextProfile)
+    setFavorites((f.data||[]).map(x=>x.product_id))
+
+    let productQuery=supabase
+      .from('products')
+      .select('*')
+      .order('created_at',{ascending:false})
+
+    if(!nextProfile?.is_admin){
+      productQuery=productQuery.eq('status','published')
+    }
+
+    const {data,error}=await productQuery
+
+    if(!error&&data)setProducts(data)
+  }
+
+  loadCatalog()
+},[session])
  const reloadProducts=async()=>{
    if(!configured)return
    const {data,error}=await supabase.from('products').select('*').order('created_at',{ascending:false})
