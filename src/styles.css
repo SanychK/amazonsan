@@ -576,11 +576,6 @@ footer{color:#7c8eaa}
 @media(prefers-reduced-motion:reduce){
   .hero-banner .hero-background,.future-product,.future-stats>div,.btn,.account-btn{transition:none!important}
 }
-  .hero-benefits span {
-    padding: 7px 10px;
-    font-size: 11px;
-  }
-}
 /* AMAZONSAN — animated category discovery menu */
 .category-menu-overlay{
   z-index:80;
