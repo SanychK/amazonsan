@@ -179,7 +179,6 @@ function App(){
   setSidebar(false)
   setCategoryMenuOpen(false)
   window.scrollTo({top:0,behavior:'smooth'})
-}, 100)
 }
  const heroTiles = [
    {name:'Усі категорії',left:2.5,top:49.3,width:15.0,height:11.3},
