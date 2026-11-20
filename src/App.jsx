@@ -224,7 +224,17 @@ function App(){
     <div className="checks full"><label><input type="checkbox" checked={!!form.is_new} onChange={e=>setField('is_new',e.target.checked)}/> Новинка</label><label><input type="checkbox" checked={!!form.is_popular} onChange={e=>setField('is_popular',e.target.checked)}/> Популярний</label><label><input type="checkbox" checked={!!form.is_best_seller} onChange={e=>setField('is_best_seller',e.target.checked)}/> Хіт продажів</label><label><input type="checkbox" checked={!!form.is_recommended} onChange={e=>setField('is_recommended',e.target.checked)}/> Рекомендуємо</label><label><input type="checkbox" checked={!!form.is_exclusive} onChange={e=>setField('is_exclusive',e.target.checked)}/> Ексклюзив</label><label><input type="checkbox" checked={!!form.is_editor_pick} onChange={e=>setField('is_editor_pick',e.target.checked)}/> Вибір редакції</label><label><input type="checkbox" checked={!!form.is_deal_of_day} onChange={e=>setField('is_deal_of_day',e.target.checked)}/> Товар дня</label></div>
    </div><div className="modal-actions"><button className="btn secondary" onClick={()=>setAdminOpen(false)}>Скасувати</button><button className="btn primary" onClick={saveProduct} disabled={loading}>{loading?'Збереження…':'Зберегти товар'}</button></div></div>
  return <div className="app-shell">
-  <header className="topbar"><div className="top-inner"><button className="mobile-menu icon-btn" onClick={()=>setSidebar(!sidebar)}><Menu/></button><button className="brand" onClick={()=>{setView('catalog');setSelected(null);setCategory('Усі категорії')}}><span className="brand-mark">a<span>•</span></span><span>amazonsan<small>КАТАЛОГ ТОВАРІВ</small></span></button>
+  <header className="topbar"><div className="top-inner"><button className="mobile-menu icon-btn" onClick={()=>setSidebar(!sidebar)}><Menu/></button><button className="brand" onClick={()=>{
+  setView('catalog')
+  setSelected(null)
+  setCategory('Усі категорії')
+  setSubcategory('Усі підкатегорії')
+  setQuery('')
+  setOnlyFav(false)
+  setBudgetCap('')
+  setStockFilter('all')
+  window.scrollTo({top:0,behavior:'smooth'})
+}}><span className="brand-mark">a<span>•</span></span><span>amazonsan<small>КАТАЛОГ ТОВАРІВ</small></span></button>
    <div className="searchbox"><Search size={19}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Знайти товар, категорію або бренд..."/><kbd>⌕</kbd></div>
    <div className="top-actions"><button className={`icon-btn ${onlyFav?'active':''}`} onClick={()=>{setOnlyFav(!onlyFav);setView('catalog')}} title="Обране"><Heart/><span className="count">{favorites.length}</span></button><button className="account-btn" onClick={()=>session?setView('account'):setAuthOpen(true)}><UserRound size={18}/><span>{session?'Мій акаунт':'Увійти'}</span></button></div>
   </div></header>
