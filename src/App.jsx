@@ -171,18 +171,15 @@ function App(){
  const currentSubs=categories.find(c=>c.name===category)?.subs||[]
  const openHeroCategory = name => {
   setCategory(name)
+  setCategoryFocus(true)
   setSubcategory('Усі підкатегорії')
   setOnlyFav(false)
   setView('catalog')
   setSelected(null)
   setSidebar(false)
   setCategoryMenuOpen(false)
-  window.setTimeout(() => {
-    document.querySelector('.catalog-section')?.scrollIntoView({
-      behavior:'smooth',
-      block:'start'
-    })
-  }, 100)
+  window.scrollTo({top:0,behavior:'smooth'})
+}, 100)
 }
  const heroTiles = [
    {name:'Усі категорії',left:2.5,top:49.3,width:15.0,height:11.3},
