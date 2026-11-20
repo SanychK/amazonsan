@@ -752,3 +752,17 @@ footer{color:#7c8eaa}
   margin-top: 0 !important;
   padding-top: 12px;
 }
+
+/* AMAZONSAN — повне відображення фото товарів у каталозі */
+.product-image img,
+.future-product .product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain !important;
+  object-position: center;
+  transform: none !important;
+}
+
+.future-product:hover .product-image img {
+  transform: none !important;
+}
