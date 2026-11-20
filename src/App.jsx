@@ -240,8 +240,8 @@ function App(){
   </div></header>
   <div className="layout">
    <aside className={`sidebar ${sidebar?'open':''}`}><div className="side-head"><span>КАТАЛОГ</span><button className="mobile-menu icon-btn" onClick={()=>setSidebar(false)}><X/></button></div>
-    <button className={`cat-link ${category==='Усі категорії'?'selected':''}`} onClick={()=>{setCategory('Усі категорії');setSubcategory('Усі підкатегорії');setSidebar(false)}}><LayoutGrid size={17}/> Усі категорії</button>
-    {categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>{setCategory(c.name);setSubcategory('Усі підкатегорії');setView('catalog');setSidebar(false)}}><span className="cat-icon">{c.icon}</span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{category===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>setSubcategory(s)}>{s}</button>)}</div>}</div>)}
+    <button className={`cat-link ${category==='Усі категорії'?'selected':''}`} onClick={()=>openHeroCategory('Усі категорії')}><LayoutGrid size={17}/> Усі категорії</button>
+{categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>openHeroCategory(c.name)}><span className="cat-icon">{c.icon}</span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{category===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>setSubcategory(s)}>{s}</button>)}</div>}</div>)}
     <div className="sidebar-bottom"><div className="mini-note"><Sparkles size={16}/><b>Знаходь цікаве</b><p>Каталог корисних товарів з Amazon в одному місці.</p></div><span>© 2026 amazonsan</span></div>
    </aside>
    <main className="main">
