@@ -739,3 +739,16 @@ footer{color:#7c8eaa}
     opacity:1!important;
   }
 }
+/* Режим перегляду категорій — товари одразу під шапкою */
+.main.category-focus > .hero,
+.main.category-focus > .future-stats,
+.main.category-focus > .engage-toolbar,
+.main.category-focus > .promo-section,
+.main.category-focus > .smart-callout {
+  display: none !important;
+}
+
+.main.category-focus > .catalog-section {
+  margin-top: 0 !important;
+  padding-top: 12px;
+}
