@@ -256,13 +256,22 @@ function App(){
       </div>
       <section className="engage-toolbar">
         <button className="engage-chip" onClick={()=>setSmartFinder(true)}><Sparkles size={17}/> Розумний підбір товару</button>
-       <button className="engage-chip" onClick={()=>{
-  if(compare.length){
-    document.querySelector('.compare-panel')?.scrollIntoView({behavior:'smooth',block:'center'})
-  }else{
-    notify('Спочатку додай товари до порівняння.')
-  }
-}}>Порівняння <b>{compare.length}</b></button>
+      <button
+  className="engage-chip"
+  onClick={() => {
+    if (compare.length === 0) {
+      window.alert('Поки що немає товарів для порівняння. Спочатку додай товари до каталогу та вибери «+ Порівняти».')
+      return
+    }
+
+    document.querySelector('.compare-panel')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    })
+  }}
+>
+  Порівняння <b>{compare.length}</b>
+</button>
         <button className="engage-chip" onClick={()=>{setOnlyFav(true);setView('catalog')}}><Heart size={16}/> Список бажань</button>
       </section>
       {featureSettings.new&&products.some(p=>p.is_new&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ЩОЙНО ДОДАНО</span><h2>Новинки тижня</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_new).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
