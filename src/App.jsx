@@ -117,12 +117,24 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    if(result.error){notify(result.error.message);return}
    setAdminOpen(false);setEditing(null);setForm(emptyForm);await reloadProducts();notify('Товар збережено.')
  }
- const startEdit=p=>{setEditing(p.id);setForm({...emptyForm,...p,price_uah:p.price_uah??'',original_price_uah:p.original_price_uah??'',price_usd:p.price_usd??'',specs:Array.isArray(p.specs)?p.specs.join('\n'):p.specs||''});setAdminOpen(true)}
- const deleteProduct=async id=>{
-   if(!confirm('Видалити цей товар?'))return
-   const {error}=await supabase.from('products').delete().eq('id',id)
-   if(error)notify(error.message);else{await reloadProducts();notify('Товар видалено.')}
- }
+ const startEdit=p=>{
+  const images=Array.isArray(p.image_urls)&&p.image_urls.length
+    ?p.image_urls
+    :p.image_url?[p.image_url]:[]
+
+  setEditing(p.id)
+  setForm({
+    ...emptyForm,
+    ...p,
+    image_urls:images,
+    image_url:images[0]||'',
+    price_uah:p.price_uah??'',
+    original_price_uah:p.original_price_uah??'',
+    price_usd:p.price_usd??'',
+    specs:Array.isArray(p.specs)?p.specs.join('\n'):p.specs||''
+  })
+  setAdminOpen(true)
+}
  const signIn=async()=>{
    setAuthError('')
    if(!configured){setAuthError('Авторизація стане доступною після підключення Supabase.');return}
