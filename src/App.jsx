@@ -342,13 +342,15 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    <div className="searchbox"><Search size={19}/><input
   value={query}
   onChange={e=>{
-    setQuery(e.target.value)
+  setQuery(e.target.value)
+  setView('catalog')
+  if(e.target.value.trim()){
     setCategory('Усі категорії')
     setSubcategory('Усі підкатегорії')
     setOnlyFav(false)
     setBudgetCap('')
     setStockFilter('all')
-    setView('catalog')
+  }
   }}
   placeholder="Знайти товар, категорію або бренд..."
 /><kbd>⌕</kbd></div>
@@ -362,7 +364,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    </aside>
    <main className={`main ${categoryFocus?'category-focus':''}`}>
     {view==='catalog'&&<>
-
+{!query.trim() && <>
 <div className="hero-layout">
   <section className="hero hero-banner" aria-label="Ласкаво просимо до AMAZONSAN">
     <img
@@ -474,6 +476,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
         <div><span>ОБРАНЕ</span><strong>{favorites.length}</strong><small>збережених товарів</small></div>
         <div><span>НОВИНКИ</span><strong>{products.filter(p=>p.is_new && (p.status==='published'||isAdmin)).length}</strong><small>свіжих надходжень</small></div>
       </div>
+ </>}
       <section className="engage-toolbar">
         <button className="engage-chip" onClick={()=>setSmartFinder(true)}><Sparkles size={17}/> Розумний підбір товару</button>
       <button
