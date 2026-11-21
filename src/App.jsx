@@ -109,7 +109,16 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    if(!form.title.trim()){notify('Вкажи назву товару.');return}
    if(!configured){notify('Для збереження товарів налаштуй Supabase за інструкцією в README.');return}
    setLoading(true)
-   const payload={...form,price_uah:form.price_uah===''?null:Number(form.price_uah),original_price_uah:form.original_price_uah===''?null:Number(form.original_price_uah),price_usd:form.price_usd===''?null:Number(form.price_usd),specs:form.specs?form.specs.split('\n').filter(Boolean):[],created_by:session.user.id}
+   const payload={
+  ...form,
+  image_urls:form.image_urls?.length?form.image_urls:(form.image_url?[form.image_url]:[]),
+  image_url:form.image_urls?.[0]||form.image_url||null,
+  price_uah:form.price_uah===''?null:Number(form.price_uah),
+  original_price_uah:form.original_price_uah===''?null:Number(form.original_price_uah),
+  price_usd:form.price_usd===''?null:Number(form.price_usd),
+  specs:form.specs?form.specs.split('\n').filter(Boolean):[],
+  created_by:session.user.id
+}
    let result
    if(editing) result=await supabase.from('products').update(payload).eq('id',editing)
    else result=await supabase.from('products').insert(payload)
