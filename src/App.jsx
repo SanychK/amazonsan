@@ -339,7 +339,19 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
   setCategoryFocus(false)
   window.scrollTo({top:0,behavior:'smooth'})
 }}><span className="brand-mark">a<span>•</span></span><span>amazonsan<small>КАТАЛОГ ТОВАРІВ</small></span></button>
-   <div className="searchbox"><Search size={19}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Знайти товар, категорію або бренд..."/><kbd>⌕</kbd></div>
+   <div className="searchbox"><Search size={19}/><input
+  value={query}
+  onChange={e=>{
+    setQuery(e.target.value)
+    setCategory('Усі категорії')
+    setSubcategory('Усі підкатегорії')
+    setOnlyFav(false)
+    setBudgetCap('')
+    setStockFilter('all')
+    setView('catalog')
+  }}
+  placeholder="Знайти товар, категорію або бренд..."
+/><kbd>⌕</kbd></div>
    <div className="top-actions"><button className={`icon-btn ${onlyFav?'active':''}`} onClick={()=>{setOnlyFav(!onlyFav);setView('catalog')}} title="Обране"><Heart/><span className="count">{favorites.length}</span></button><button className="account-btn" onClick={()=>session?setView('account'):setAuthOpen(true)}><UserRound size={18}/><span>{session?'Мій акаунт':'Увійти'}</span></button></div>
   </div></header>
   <div className="layout">
