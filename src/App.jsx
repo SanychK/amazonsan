@@ -83,8 +83,16 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    if(subcategory!=='Усі підкатегорії')arr=arr.filter(p=>p.subcategory===subcategory)
    if(budgetCap)arr=arr.filter(p=>p.price_uah!=null&&Number(p.price_uah)<=Number(budgetCap))
    if(stockFilter!=='all')arr=arr.filter(p=>(p.stock_status||'in_stock')===stockFilter)
-   if(onlyFav)arr=arr.filter(p=>favorites.includes(p.id))
-   if(query.trim()){const q=query.toLowerCase();arr=arr.filter(p=>[p.title,p.description,p.category,p.subcategory,p.sku].join(' ').toLowerCase().includes(q))}
+   if(onlyFav)arr=arr.filter(p=>favorites.includes(p.id))if(query.trim()){
+  const words=query.toLowerCase().trim().split(/\s+/).filter(Boolean)
+  arr=arr.filter(p=>{
+    const text=[p.title,p.description,p.category,p.subcategory,p.sku]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+    return words.every(word=>text.includes(word))
+  })
+}
    if(sort==='priceUp')arr.sort((a,b)=>(a.price_uah||0)-(b.price_uah||0))
    if(sort==='priceDown')arr.sort((a,b)=>(b.price_uah||0)-(a.price_uah||0))
    if(sort==='name')arr.sort((a,b)=>a.title.localeCompare(b.title,'uk'))
