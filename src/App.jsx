@@ -8,7 +8,7 @@ const emptyForm = {title:'',category:categories[0].name,subcategory:'',price_uah
 function App(){
  const [products,setProducts]=useState(demoProducts),[stockFilter,setStockFilter]=useState('all'),[session,setSession]=useState(null),[profile,setProfile]=useState(null)
  const [favorites,setFavorites]=useState([]),[query,setQuery]=useState(''),[category,setCategory]=useState('Усі категорії'),[subcategory,setSubcategory]=useState('Усі підкатегорії')
- const const [sort,setSort]=useState('new'),[onlyFav,setOnlyFav]=useState(false),[view,setView]=useState('catalog'),[selected,setSelected]=useState(null),[selectedImageIndex,setSelectedImageIndex]=useState(0)
+ const [sort,setSort]=useState('new'),[onlyFav,setOnlyFav]=useState(false),[view,setView]=useState('catalog'),[selected,setSelected]=useState(null),[selectedImageIndex,setSelectedImageIndex]=useState(0)
  const [authOpen,setAuthOpen]=useState(false),[authMode,setAuthMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authError,setAuthError]=useState('')
  const [adminOpen,setAdminOpen]=useState(false),[editing,setEditing]=useState(null),[form,setForm]=useState(emptyForm),[notice,setNotice]=useState(''),[loading,setLoading]=useState(false)
 const [sidebar,setSidebar]=useState(false)
