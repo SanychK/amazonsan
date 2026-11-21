@@ -258,6 +258,27 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
     <label>Наявність<select value={form.stock_status||'in_stock'} onChange={e=>setField('stock_status',e.target.value)}><option value="in_stock">В наявності</option><option value="out_of_stock">Немає в наявності</option></select></label>
     <label className="full">URL зображення<input value={form.image_url||''} onChange={e=>setField('image_url',e.target.value)} placeholder="https://..."/></label>
     <label className="full upload-label"><ImagePlus size={17}/> Завантажити фото з пристрою<input type="file" accept="image/*" multiple onChange={e=>{uploadImage(e.target.files);e.target.value=''}}/></label>
+    {(form.image_urls?.length?form.image_urls:form.image_url?[form.image_url]:[]).length>0&&
+  <div className="full admin-image-previews">
+    {(form.image_urls?.length?form.image_urls:form.image_url?[form.image_url]:[]).map((url,index)=>(
+      <div className="admin-image-preview" key={`${url}-${index}`}>
+        <img src={url} alt={`Фото ${index+1}`}/>
+        <button type="button" onClick={()=>{
+          setForm(current=>{
+            const images=current.image_urls?.length
+              ?current.image_urls
+              :current.image_url?[current.image_url]:[]
+            const next=images.filter((_,i)=>i!==index)
+            return {...current,image_urls:next,image_url:next[0]||''}
+          })
+        }} title="Видалити фото">
+          <X size={15}/>
+        </button>
+        {index===0&&<span>Головне фото</span>}
+      </div>
+    ))}
+  </div>
+}
     <label className="full">Посилання на товар Amazon<input value={form.amazon_url||''} onChange={e=>setField('amazon_url',e.target.value)} placeholder="https://www.amazon.com/..."/></label>
     <label className="full">Опис<textarea rows="4" value={form.description||''} onChange={e=>setField('description',e.target.value)} placeholder="Опис українською мовою"/></label>
     <label className="full">Характеристики (кожна з нового рядка)<textarea rows="3" value={form.specs||''} onChange={e=>setField('specs',e.target.value)} placeholder="Колір: чорний&#10;Підключення: Bluetooth"/></label>
