@@ -341,19 +341,40 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    </aside>
    <main className={`main ${categoryFocus?'category-focus':''}`}>
     {view==='catalog'&&<>
-<section className="hero hero-banner" aria-label="Ласкаво просимо до AMAZONSAN">
-  <img className="hero-background" src="/hero-showcase.png" alt="Добірка сучасної електроніки та товарів" fetchPriority="high" />
-  <div className="hero-overlay">
-   <button className="btn primary hero-cta" onClick={() => setCategoryMenuOpen(true)}>
-  Каталог товарів <ChevronRight size={17}/>
-</button>
-    <span className="eyebrow">ВІДКРИВАЙ · ОБИРАЙ · ЗБЕРІГАЙ</span>
-    <h1>Більше можливостей <em>для тебе</em></h1>
-    <p>Знаходь цікаві товари з Amazon у зручному каталозі AMAZONSAN.</p>
-    <div className="hero-benefits"><span>✓ Зручний пошук</span><span>✓ Обране</span><span>✓ Нові надходження</span></div>
-    
-  </div>
-</section>
+
+<div className="hero-layout">
+  <section className="hero hero-banner" aria-label="Ласкаво просимо до AMAZONSAN">
+    <img
+      className="hero-background"
+      src="/hero-showcase.png"
+      alt="Добірка сучасної електроніки та товарів"
+      fetchPriority="high"
+    />
+    <div className="hero-overlay">
+      <button className="btn primary hero-cta" onClick={() => setCategoryMenuOpen(true)}>
+        Каталог товарів <ChevronRight size={17}/>
+      </button>
+      <span className="eyebrow">ВІДКРИВАЙ · ОБИРАЙ · ЗБЕРІГАЙ</span>
+      <h1>Більше можливостей <em>для тебе</em></h1>
+      <p>Знаходь цікаві товари з Amazon у зручному каталозі AMAZONSAN.</p>
+      <div className="hero-benefits">
+        <span>✓ Зручний пошук</span>
+        <span>✓ Обране</span>
+        <span>✓ Нові надходження</span>
+      </div>
+    </div>
+  </section>
+
+  <aside className="hero-side-promo">
+    <span className="eyebrow">AMAZONSAN PICKS</span>
+    <h2>Цікаве вже чекає на тебе</h2>
+    <p>Відкривай нові товари, знаходь корисні речі та обирай найкраще.</p>
+    <button className="btn primary" onClick={() => setCategoryMenuOpen(true)}>
+      Переглянути каталог <ChevronRight size={17}/>
+    </button>
+    <div className="hero-promo-decoration">✦</div>
+  </aside>
+</div>
       <div className="future-stats">
         <div><span>КАТАЛОГ</span><strong>{products.length.toLocaleString('uk-UA')}</strong><small>товарів у базі</small></div>
         <div><span>КАТЕГОРІЇ</span><strong>{categories.length}</strong><small>напрямів покупок</small></div>
