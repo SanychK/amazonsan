@@ -131,14 +131,39 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
  }
  const googleLogin=async()=>{if(!configured){setAuthError('Спочатку підключи Supabase.');return}const {error}=await supabase.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin}});if(error)setAuthError(error.message)}
  const signOut=async()=>{if(configured)await supabase.auth.signOut();setView('catalog');notify('Ти вийшов з акаунта.')}
- const uploadImage=async file=>{
-   if(!configured||!session){notify('Для завантаження фото потрібне підключення Supabase та вхід.');return}
-   const ext=file.name.split('.').pop(),path=`${session.user.id}/${Date.now()}.${ext}`
-   const {error}=await supabase.storage.from('product-images').upload(path,file,{upsert:true})
-   if(error){notify(error.message);return}
-   const {data}=supabase.storage.from('product-images').getPublicUrl(path)
-   setForm({...form,image_url:data.publicUrl});notify('Фото завантажено.')
- }
+ const uploadImage=async files=>{
+  if(!configured||!session){
+    notify('Для завантаження фото потрібне підключення Supabase та вхід.')
+    return
+  }
+
+  const selectedFiles=Array.from(files||[])
+  if(!selectedFiles.length)return
+
+  const uploadedUrls=[]
+
+  for(const file of selectedFiles){
+    const ext=file.name.split('.').pop()?.toLowerCase()||'jpg'
+    const path=`${session.user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`
+
+    const {error}=await supabase.storage.from('product-images').upload(path,file,{upsert:false})
+
+    if(error){
+      notify(error.message)
+      return
+    }
+    const {data}=supabase.storage.from('product-images').getPublicUrl(path)
+    uploadedUrls.push(data.publicUrl)
+  }
+  setForm(current=>{
+    const existing=current.image_urls?.length
+      ? current.image_urls
+      : current.image_url?[current.image_url]:[]
+    const images=[...existing,...uploadedUrls]
+    return {...current,image_urls:images,image_url:images[0]||''}
+  })
+  notify(`Завантажено фото: ${uploadedUrls.length}`)
+}
  const exportJSON=()=>{const blob=new Blob([JSON.stringify(products,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='amazonsan-products.json';a.click();URL.revokeObjectURL(a.href)}
  const importJSON=async file=>{
    if(!configured||!isAdmin){notify('Імпорт доступний адміністратору після підключення бази.');return}
