@@ -105,6 +105,39 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
      if(configured)await supabase.from('favorites').insert({user_id:session.user.id,product_id:id})
    }
  }
+ const deleteProduct=async id=>{
+  if(!isAdmin){
+    notify('Видалення доступне лише адміністратору.')
+    return
+  }
+
+  const product=products.find(p=>p.id===id)
+  if(!product)return
+
+  if(!window.confirm(`Видалити товар «${product.title}»? Цю дію не можна скасувати.`))return
+
+  setLoading(true)
+
+  const {error}=await supabase
+    .from('products')
+    .delete()
+    .eq('id',id)
+
+  setLoading(false)
+
+  if(error){
+    notify('Не вдалося видалити товар: '+error.message)
+    return
+  }
+
+  setProducts(current=>current.filter(p=>p.id!==id))
+  setFavorites(current=>current.filter(x=>x!==id))
+  setCompare(current=>current.filter(x=>x!==id))
+
+  if(selected?.id===id)setSelected(null)
+
+  notify('Товар успішно видалено.')
+}
  const saveProduct=async()=>{
    if(!form.title.trim()){notify('Вкажи назву товару.');return}
    if(!configured){notify('Для збереження товарів налаштуй Supabase за інструкцією в README.');return}
