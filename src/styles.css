@@ -941,3 +941,45 @@ footer{color:#7c8eaa}
   color: #4389ef;
   font-weight: 700;
 }
+
+/* Компактніший головний банер AMAZONSAN */
+.hero-banner {
+  aspect-ratio: 16 / 7.5 !important;
+  min-height: 0 !important;
+}
+
+.hero-overlay {
+  padding: clamp(24px, 3vw, 40px) !important;
+}
+
+.hero-banner h1 {
+  margin-bottom: 12px !important;
+}
+
+.hero-banner p {
+  margin-bottom: 16px !important;
+}
+
+.hero-cta {
+  margin-top: 8px !important;
+  margin-bottom: 16px !important;
+}
+
+.hero-benefits {
+  margin-top: 12px !important;
+}
+
+@media (max-width: 768px) {
+  .hero-banner {
+    aspect-ratio: auto !important;
+    min-height: 365px !important;
+  }
+
+  .hero-overlay {
+    padding: 24px 20px !important;
+  }
+
+  .hero-banner h1 {
+    font-size: clamp(28px, 7vw, 38px) !important;
+  }
+}
