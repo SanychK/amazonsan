@@ -92,7 +92,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    if(sort==='best')arr.sort((a,b)=>Number(!!b.is_best_seller)-Number(!!a.is_best_seller))
    return arr
  },[products,category,subcategory,onlyFav,favorites,query,sort,isAdmin,budgetCap,stockFilter])
- const openProduct=p=>{setSelected(p);setRecentlyViewed(old=>{const next=[p.id,...old.filter(id=>id!==p.id)].slice(0,8);localStorage.setItem('amazonsan_recent',JSON.stringify(next));return next})}
+ const openProduct=p=>{setSelectedImageIndex(0);setSelected(p);setRecentlyViewed(old=>{const next=[p.id,...old.filter(id=>id!==p.id)].slice(0,8);localStorage.setItem('amazonsan_recent',JSON.stringify(next));return next})}
  const toggleCompare=id=>setCompare(old=>old.includes(id)?old.filter(x=>x!==id):old.length<4?[...old,id]:(notify('Можна порівняти до 4 товарів.'),old))
  const toggleFeature=k=>setFeatureSettings(old=>{const next={...old,[k]:!old[k]};localStorage.setItem('amazonsan_sections',JSON.stringify(next));return next})
  const toggleFavorite=async id=>{
