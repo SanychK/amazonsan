@@ -842,10 +842,14 @@ footer{color:#7c8eaa}
 /* AMAZONSAN — окреме прокручування мобільного каталогу */
 @media (max-width: 760px) {
   .sidebar {
+    height: calc(100vh - 66px) !important;
+    height: calc(100dvh - 66px) !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 66px) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
     touch-action: pan-y;
   }
 }
