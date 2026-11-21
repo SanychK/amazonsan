@@ -344,13 +344,14 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
 <section className="hero hero-banner" aria-label="Ласкаво просимо до AMAZONSAN">
   <img className="hero-background" src="/hero-showcase.png" alt="Добірка сучасної електроніки та товарів" fetchPriority="high" />
   <div className="hero-overlay">
+   <button className="btn primary hero-cta" onClick={() => setCategoryMenuOpen(true)}>
+  Каталог товарів <ChevronRight size={17}/>
+</button>
     <span className="eyebrow">ВІДКРИВАЙ · ОБИРАЙ · ЗБЕРІГАЙ</span>
     <h1>Більше можливостей <em>для тебе</em></h1>
     <p>Знаходь цікаві товари з Amazon у зручному каталозі AMAZONSAN.</p>
     <div className="hero-benefits"><span>✓ Зручний пошук</span><span>✓ Обране</span><span>✓ Нові надходження</span></div>
-    <button className="btn primary hero-cta" onClick={() => setCategoryMenuOpen(true)}>
-  Каталог товарів <ChevronRight size={17}/>
-</button>
+    
   </div>
 </section>
       <div className="future-stats">
