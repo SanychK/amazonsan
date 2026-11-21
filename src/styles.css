@@ -983,3 +983,107 @@ footer{color:#7c8eaa}
     font-size: clamp(28px, 7vw, 38px) !important;
   }
 }
+
+/* AMAZONSAN — компактний банер із правою промопанеллю */
+.hero-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 18px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto 30px;
+  align-items: stretch;
+}
+
+.hero-layout .hero-banner {
+  width: 100%;
+  min-width: 0;
+  min-height: 320px !important;
+  aspect-ratio: 16 / 9;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.hero-layout .hero-overlay {
+  padding: clamp(20px, 2.5vw, 32px) !important;
+}
+
+.hero-layout .hero-background {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-layout .hero-side-promo {
+  position: relative;
+  min-width: 0;
+  min-height: 320px;
+  padding: 28px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #102d55, #1765a5 65%, #35a5d5);
+  color: #fff;
+  box-shadow: 0 12px 35px rgba(15, 55, 100, 0.16);
+}
+
+.hero-side-promo .eyebrow {
+  color: #a9ddff;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.hero-side-promo h2 {
+  position: relative;
+  z-index: 1;
+  margin: 16px 0 12px;
+  max-width: 300px;
+  font-size: clamp(23px, 2.3vw, 32px);
+  line-height: 1.15;
+}
+
+.hero-side-promo p {
+  position: relative;
+  z-index: 1;
+  max-width: 300px;
+  color: rgba(255,255,255,.85);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.hero-side-promo .btn {
+  align-self: flex-start;
+  position: relative;
+  z-index: 2;
+  margin-top: 16px;
+}
+
+.hero-promo-decoration {
+  position: absolute;
+  right: 18px;
+  bottom: 0;
+  color: rgba(255,255,255,.12);
+  font-size: 150px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .hero-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .hero-layout .hero-banner {
+    min-height: 320px !important;
+    aspect-ratio: auto;
+  }
+
+  .hero-layout .hero-side-promo {
+    min-height: 230px;
+    padding: 24px;
+  }
+}
