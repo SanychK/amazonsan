@@ -375,6 +375,78 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
     <div className="hero-promo-decoration">✦</div>
   </aside>
 </div>
+     
+<section className="new-arrivals-section">
+  <div className="section-head">
+    <div>
+      <span className="eyebrow">ЩОЙНО ДОДАНО</span>
+      <h2>Новинки AMAZONSAN</h2>
+      <p>Найсвіжіші товари нашого каталогу</p>
+    </div>
+    <button
+      className="btn secondary small"
+      onClick={() => {
+        setCategory('Усі категорії')
+        setSubcategory('Усі підкатегорії')
+        setOnlyFav(false)
+        setQuery('')
+        setBudgetCap('')
+        setStockFilter('all')
+        setSort('new')
+        document.querySelector('.catalog-section')?.scrollIntoView({ behavior: 'smooth' })
+      }}
+    >
+      Усі новинки <ChevronRight size={16}/>
+    </button>
+  </div>
+
+  <div className="product-grid">
+    {[...products]
+      .filter(p => p.status === 'published' || isAdmin)
+      .sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+      .slice(0,8)
+      .map(p => (
+        <article className="product-card future-product" key={`new-${p.id}`}>
+          <div className="product-image" onClick={() => openProduct(p)} role="button" tabIndex={0}>
+            {(p.image_urls?.[0] || p.image_url)
+              ? <img src={p.image_urls?.[0] || p.image_url} alt={p.title} loading="lazy"/>
+              : <div className="image-placeholder"><Package/></div>}
+            <span className="tag new">НОВИНКА</span>
+            {p.stock_status === 'out_of_stock' && <span className="tag soldout">НЕМАЄ В НАЯВНОСТІ</span>}
+            <button
+              className={`fav-btn ${favorites.includes(p.id) ? 'liked' : ''}`}
+              onClick={e => { e.stopPropagation(); toggleFavorite(p.id) }}
+              title="В обране"
+            >
+              <Heart size={16} fill={favorites.includes(p.id) ? 'currentColor' : 'none'}/>
+            </button>
+          </div>
+          <div className="product-info">
+            <span className="product-category">{p.category}</span>
+            <h3 onClick={() => openProduct(p)}>{p.title}</h3>
+            <p>{p.description || 'Детальна інформація про товар незабаром.'}</p>
+            <div className="product-bottom">
+              <div>
+                {p.original_price_uah > p.price_uah && <del className="old-price">{money(p.original_price_uah)}</del>}
+                <b>{money(p.price_uah)}</b>
+                {p.price_usd != null && <small>${p.price_usd} на Amazon</small>}
+              </div>
+              <button className="arrow-btn" onClick={() => openProduct(p)} aria-label="Детальніше">
+                <ChevronRight size={18}/>
+              </button>
+            </div>
+            <button
+              className={`compare-toggle ${compare.includes(p.id) ? 'selected' : ''}`}
+              onClick={() => toggleCompare(p.id)}
+            >
+              {compare.includes(p.id) ? '✓ Додано до порівняння' : '+ Порівняти'}
+            </button>
+          </div>
+        </article>
+      ))}
+  </div>
+</section>
+
       <div className="future-stats">
         <div><span>КАТАЛОГ</span><strong>{products.length.toLocaleString('uk-UA')}</strong><small>товарів у базі</small></div>
         <div><span>КАТЕГОРІЇ</span><strong>{categories.length}</strong><small>напрямів покупок</small></div>
