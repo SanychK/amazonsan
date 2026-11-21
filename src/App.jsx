@@ -477,6 +477,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
         <div><span>НОВИНКИ</span><strong>{products.filter(p=>p.is_new && (p.status==='published'||isAdmin)).length}</strong><small>свіжих надходжень</small></div>
       </div>
  </>}
+     {!query.trim() && <>
       <section className="engage-toolbar">
         <button className="engage-chip" onClick={()=>setSmartFinder(true)}><Sparkles size={17}/> Розумний підбір товару</button>
       <button
@@ -505,6 +506,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
       {featureSettings.deals&&products.some(p=>p.status==='published'&&p.original_price_uah>p.price_uah)&&<section className="promo-section deal-section"><div className="section-head"><div><span className="eyebrow">ВИГІДНІ ПРОПОЗИЦІЇ</span><h2>Акції та знижки</h2><p>Порівнюй стару та актуальну ціну</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.original_price_uah>p.price_uah).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><del>{money(p.original_price_uah)}</del><b>{money(p.price_uah)} · −{Math.round((1-p.price_uah/p.original_price_uah)*100)}%</b></button>)}</div></section>}
       {featureSettings.smart&&<section className="smart-callout"><div><span className="eyebrow">НЕ ЗНАЄШ, ЩО ОБРАТИ?</span><h2>Знайдемо те, що підходить саме тобі</h2><p>Вкажи бюджет і призначення — підберемо відповідні позиції з каталогу.</p></div><button className="btn primary" onClick={()=>setSmartFinder(true)}>Підібрати товар <ChevronRight size={17}/></button></section>}
       {featureSettings.recent&&recentlyViewed.length>0&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ПОВЕРНИСЯ ДО ЦІКАВОГО</span><h2>Нещодавно переглянуті</h2></div></div><div className="promo-strip">{recentlyViewed.map(id=>products.find(p=>p.id===id)).filter(Boolean).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
+      </>}
       <section className="catalog-section future-catalog">
         <div className="section-head">
           <div><span className="eyebrow">ВІДКРИВАЙ · ОБИРАЙ · ПОРІВНЮЙ</span><h2>{onlyFav?'Обране':category==='Усі категорії'?'Каталог товарів':category}</h2><p>Знайди потрібне серед товарів AMAZONSAN</p></div>
