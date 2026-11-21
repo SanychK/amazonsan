@@ -816,3 +816,26 @@ footer{color:#7c8eaa}
     height: 118px !important;
   }
 }
+/* AMAZONSAN — показ кнопки каталогу на мобільних */
+@media (max-width: 760px) {
+  .hero-banner {
+    height: auto !important;
+    min-height: 460px !important;
+    aspect-ratio: auto !important;
+  }
+
+  .hero-banner .hero-overlay {
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-banner .hero-cta {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative;
+    z-index: 3;
+  }
+}
