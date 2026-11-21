@@ -83,7 +83,8 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    if(subcategory!=='Усі підкатегорії')arr=arr.filter(p=>p.subcategory===subcategory)
    if(budgetCap)arr=arr.filter(p=>p.price_uah!=null&&Number(p.price_uah)<=Number(budgetCap))
    if(stockFilter!=='all')arr=arr.filter(p=>(p.stock_status||'in_stock')===stockFilter)
-   if(onlyFav)arr=arr.filter(p=>favorites.includes(p.id))if(query.trim()){
+   if(onlyFav)arr=arr.filter(p=>favorites.includes(p.id))
+   if(query.trim()){
   const words=query.toLowerCase().trim().split(/\s+/).filter(Boolean)
   arr=arr.filter(p=>{
     const text=[p.title,p.description,p.category,p.subcategory,p.sku]
