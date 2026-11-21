@@ -292,8 +292,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
     <label className="full">URL зображення<input value={form.image_url||''} onChange={e=>setField('image_url',e.target.value)} placeholder="https://..."/></label>
     <label className="full upload-label"><ImagePlus size={17}/> Завантажити фото з пристрою<input type="file" accept="image/*" multiple onChange={e=>{uploadImage(e.target.files);e.target.value=''}}/></label>
     <div className="full admin-image-previews">
-  <div className="full admin-image-previews">
-    {(form.image_urls?.length?form.image_urls:form.image_url?[form.image_url]:[]).map((url,index)=>(
+      {(form.image_urls?.length?form.image_urls:form.image_url?[form.image_url]:[]).map((url,index)=>(
       <div className="admin-image-preview" key={`${url}-${index}`}>
         <img src={url} alt={`Фото ${index+1}`}/>
         <button type="button" onClick={()=>{
