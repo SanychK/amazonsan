@@ -310,7 +310,6 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
       </div>
     ))}
   </div>
-
     <label className="full">Посилання на товар Amazon<input value={form.amazon_url||''} onChange={e=>setField('amazon_url',e.target.value)} placeholder="https://www.amazon.com/..."/></label>
     <label className="full">Опис<textarea rows="4" value={form.description||''} onChange={e=>setField('description',e.target.value)} placeholder="Опис українською мовою"/></label>
     <label className="full">Характеристики (кожна з нового рядка)<textarea rows="3" value={form.specs||''} onChange={e=>setField('specs',e.target.value)} placeholder="Колір: чорний&#10;Підключення: Bluetooth"/></label>
