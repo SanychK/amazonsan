@@ -893,3 +893,51 @@ footer{color:#7c8eaa}
     height: 60px;
   }
 }
+/* AMAZONSAN — мініатюри фото в адмінпанелі */
+.admin-image-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 4px 0 14px;
+}
+
+.admin-image-preview {
+  position: relative;
+  width: 104px;
+  min-height: 112px;
+  padding: 6px;
+  border: 1px solid #dce6f6;
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.admin-image-preview img {
+  width: 88px;
+  height: 78px;
+  object-fit: contain;
+}
+
+.admin-image-preview button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #d34b59;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.admin-image-preview span {
+  font-size: 10px;
+  color: #4389ef;
+  font-weight: 700;
+}
