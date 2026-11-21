@@ -344,7 +344,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
         <div className="future-results">ЗНАЙДЕНО <b>{visible.length}</b> ТОВАРІВ <span>·</span> {subcategory!=='Усі підкатегорії'?subcategory:'УСІ ПІДКАТЕГОРІЇ'}</div>
         {visible.length ? <div className="product-grid">{visible.map(p=><article className="product-card future-product" key={p.id}>
           <div className="product-image" onClick={()=>openProduct(p)} role="button" tabIndex={0} onKeyDown={e=>e.key==='Enter'&&setSelected(p)}>
-            {p.image_url?<img src={p.image_url} alt={p.title} loading="lazy"/>:<div className="image-placeholder"><Package/></div>}
+            {(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title} loading="lazy"/>:<div className="image-placeholder"><Package/></div>}
             {p.is_new&&<span className="tag new">НОВИНКА</span>}{p.is_popular&&<span className="tag popular">ПОПУЛЯРНЕ</span>}{p.is_best_seller&&<span className="tag best">ХІТ ПРОДАЖІВ</span>}{p.is_editor_pick&&<span className="tag editorial">ВИБІР AMAZONSAN</span>}{p.is_exclusive&&<span className="tag exclusive">ЕКСКЛЮЗИВ</span>}{p.is_deal_of_day&&<span className="tag daydeal">ТОВАР ДНЯ</span>}{p.original_price_uah>p.price_uah&&<span className="tag sale">−{Math.round((1-p.price_uah/p.original_price_uah)*100)}%</span>}{p.stock_status==='out_of_stock'&&<span className="tag soldout">НЕМАЄ В НАЯВНОСТІ</span>}
             <button className={`fav-btn ${favorites.includes(p.id)?'liked':''}`} onClick={e=>{e.stopPropagation();toggleFavorite(p.id)}} title="В обране"><Heart size={16} fill={favorites.includes(p.id)?'currentColor':'none'}/></button>
           </div>
