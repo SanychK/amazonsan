@@ -10,7 +10,6 @@ export async function onRequestPost({ request, env }) {
     if (!env.AI) {
       return json({ error: "AI не підключений у Cloudflare Pages." }, 500);
     }
-
     const supabaseUrl =
       env.VITE_SUPABASE_URL || env.SUPABASE_URL;
     const supabaseKey =
