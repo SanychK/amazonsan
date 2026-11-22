@@ -311,10 +311,20 @@ for (let start = 0; start < cleaned.length; start++) {
 
 if (!product) {
   return json({
-    error: "AI не повернув коректний JSON. Потрібна додаткова перевірка відповіді."
+    error: "Не вдалося розібрати відповідь AI.",
+    diagnostics: {
+      responseKeys: Object.keys(aiResponse || {}),
+      choiceCount: aiResponse?.choices?.length || 0,
+      messageKeys: Object.keys(message || {}),
+      finishReason: aiResponse?.choices?.[0]?.finish_reason || null,
+      contentType: typeof content,
+      contentPreview:
+        typeof content === "string"
+          ? content.slice(0, 1200)
+          : JSON.stringify(content)?.slice(0, 1200) || null
+    }
   }, 502);
 }
-
     const annotations =
       aiResponse?.choices?.[0]?.message?.annotations || [];
 
