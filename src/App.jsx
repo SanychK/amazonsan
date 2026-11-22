@@ -269,8 +269,14 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
 
       const data=await response.json()
 
-      if(!response.ok){
-        throw new Error(data.error||'Не вдалося знайти інформацію про товар.')
+            if(!response.ok){
+        const details = data.diagnostics
+          ? '\n\nДІАГНОСТИКА:\n' + JSON.stringify(data.diagnostics, null, 2)
+          : ''
+
+        throw new Error(
+          (data.error||'Не вдалося знайти інформацію про товар.') + details
+        )
       }
 
       if(data.title?.trim()){
