@@ -134,7 +134,11 @@ export async function onRequestPost({ request, env }) {
       ]
     });
 
-    const description = String(result?.response || "").trim();
+    const description = String(
+  result?.response ||
+  result?.choices?.[0]?.message?.content ||
+  ""
+).trim();
 
     if (!description) {
       return json({
