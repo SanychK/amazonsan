@@ -207,10 +207,14 @@ ${categories.join(", ")}
       }
     );
 
-    let content =
-      aiResponse?.choices?.[0]?.message?.content ??
-      aiResponse?.response ??
-      aiResponse?.result?.response;
+    const message = aiResponse?.choices?.[0]?.message;
+
+let content =
+  message?.parsed ??
+  message?.content ??
+  aiResponse?.parsed ??
+  aiResponse?.response ??
+  aiResponse?.result?.response;
 
     if (Array.isArray(content)) {
       content = content
