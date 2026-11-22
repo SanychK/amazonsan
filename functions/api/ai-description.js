@@ -1,55 +1,50 @@
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-  });
-}
-
 export async function onRequestPost({ request, env }) {
+  const json = (data, status = 200) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+
   try {
     if (!env.AI) {
-      return json({ error: "AI не підключено до Cloudflare Pages." }, 503);
+      return json({ error: "AI не підключений у Cloudflare Pages." }, 500);
     }
 
-    const supabaseUrl = (
-      env.VITE_SUPABASE_URL || env.SUPABASE_URL || ""
-    ).replace(/\/+$/, "");
-
+    const supabaseUrl =
+      env.VITE_SUPABASE_URL || env.SUPABASE_URL;
     const supabaseKey =
       env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-      return json({
-        error: "Не знайдено змінні підключення Supabase у Cloudflare.",
-      }, 503);
+      return json({ error: "Не налаштовані змінні Supabase." }, 500);
     }
 
     const authorization = request.headers.get("Authorization") || "";
-    const token = authorization.replace(/^Bearer\s+/i, "").trim();
+    const token = authorization.replace(/^Bearer\s+/i, "");
 
     if (!token) {
-      return json({ error: "Увійди в акаунт адміністратора." }, 401);
+      return json({ error: "Потрібно увійти в акаунт адміністратора." }, 401);
     }
 
-    const authResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: {
-        apikey: supabaseKey,
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const authResponse = await fetch(
+      `${supabaseUrl}/auth/v1/user`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     if (!authResponse.ok) {
-      return json({ error: "Сесія завершилася. Увійди повторно." }, 401);
+      return json({ error: "Не вдалося підтвердити авторизацію." }, 401);
     }
 
     const user = await authResponse.json();
 
     const profileResponse = await fetch(
-      `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=is_admin&limit=1`,
+      `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=is_admin`,
       {
         headers: {
           apikey: supabaseKey,
@@ -59,142 +54,224 @@ export async function onRequestPost({ request, env }) {
     );
 
     if (!profileResponse.ok) {
-      return json({
-        error: "Не вдалося перевірити права адміністратора.",
-      }, 403);
+      return json({ error: "Не вдалося перевірити права адміністратора." }, 403);
     }
 
     const profiles = await profileResponse.json();
 
     if (!profiles?.[0]?.is_admin) {
-      return json({
-        error: "AI-помічник доступний лише адміністратору.",
-      }, 403);
+      return json({ error: "Доступ дозволений лише адміністратору." }, 403);
     }
 
     const body = await request.json();
-
-    const title = String(body.title || "").trim().slice(0, 180);
-    const model = String(body.model || "").trim().slice(0, 120);
-    const purpose = String(body.purpose || "").trim().slice(0, 1000);
-    const specs = String(body.specs || "").trim().slice(0, 3000);
+    const title = String(body.title || "").trim();
+    const model = String(body.model || "").trim();
+    const purpose = String(body.purpose || "").trim();
+    const suppliedSpecs = String(body.specs || "").trim();
 
     if (!title) {
       return json({ error: "Вкажи назву товару." }, 400);
     }
 
-    const result = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
-      messages: [
-        {
-          role: "system",
-          content: `Ти — дослідник товарів і професійний редактор каталогу AMAZONSAN.
+    const categories = [
+      "Електроніка",
+      "Дім і кухня",
+      "Одяг і взуття",
+      "Краса та догляд",
+      "Здоров’я",
+      "Спорт і туризм",
+      "Автотовари",
+      "Дитячі товари",
+      "Іграшки та хобі",
+      "Інструменти",
+      "Товари для тварин",
+      "Офіс і канцелярія",
+      "Продукти та напої",
+      "Музика",
+      "Сад і город",
+      "Ювелірні вироби",
+      "Багаж і подорожі",
+      "Товари для бізнесу",
+      "Інше",
+    ];
 
-ОБОВ'ЯЗКОВО використовуй вбудований пошук в інтернеті.
+    const prompt = `
+Ти — професійний фахівець з пошуку, перевірки та підготовки товарів для українського інтернет-магазину AMAZONSAN.
 
-ПОШУК І ПЕРЕВІРКА:
-1. Знайди товар за точною назвою та моделлю.
-2. Спочатку перевір офіційний сайт виробника.
-3. Додатково перевір Amazon та інші надійні джерела.
-4. Переконайся, що знайдені характеристики стосуються саме цієї моделі та її модифікації.
-5. Збери максимально повний перелік підтверджених характеристик.
-6. Залежно від типу товару перевір розміри, вагу, матеріали, потужність, функції, живлення, акумулятор, підключення, сумісність, комплектацію та інші технічні параметри.
-7. Не використовуй характеристики схожих моделей.
-8. Якщо джерела суперечать одне одному, надавай перевагу офіційній інформації виробника.
-9. Не вигадуй відсутні дані. Непідтверджені характеристики пропускай.
+ЗАВДАННЯ:
+Знайди в інтернеті саме цей товар і підготуй повну структуровану картку українською мовою.
 
-СТВОРЕННЯ ОПИСУ:
-- Напиши повний, грамотний, привабливий опис українською мовою.
-- Створи цікавий вступ.
-- Опиши основні можливості та переваги.
-- Поясни практичну користь товару.
-- Додай окремий розділ із технічними характеристиками.
-- Використовуй усі знайдені достовірні характеристики, а не лише кілька найважливіших.
-- Структуруй текст короткими абзацами та підзаголовками.
-
-ФОРМАТУВАННЯ:
-- Використовуй звичайний текст.
-- Для списків використовуй маркер •.
-- НІКОЛИ не використовуй символи * або **.
-- Не став зірочки після речень.
-- Не використовуй Markdown-виділення.
-- Не додавай декоративні символи в кінці речень.
-- Емодзі використовуй помірно та доречно.
-
-ЯКЩО ПОШУК НЕВДАЛИЙ:
-Не вигадуй характеристики. Повідом, що товар не вдалося достовірно ідентифікувати, і попроси уточнити модель.
-
-Поверни лише готовий опис українською мовою.`
-        },
-        {
-          role: "user",
-          content: `Знайди в інтернеті та підготуй повний опис саме цього товару.
-
-Назва: ${title}
-Модель: ${model || "Не вказана"}
+Назва товару: ${title}
+Модель від користувача: ${model || "Не вказана"}
 Призначення: ${purpose || "Не вказано"}
-Додаткові дані адміністратора: ${specs || "Немає"}
+Додаткові дані від користувача: ${suppliedSpecs || "Не надано"}
 
-Потрібно знайти всі доступні достовірні характеристики та включити їх в опис.`
-        }
-      ],
-      web_search_options: {
-        search_context_size: "medium"
+ОБОВ'ЯЗКОВІ ПРАВИЛА ПОШУКУ:
+1. Шукай точну модель товару, а не просто схожий товар.
+2. Насамперед використовуй офіційний сайт виробника.
+3. Додатково перевіряй Amazon та інші надійні джерела.
+4. Збирай лише характеристики, які вдалося підтвердити.
+5. Не вигадуй потужність, розміри, матеріали, комплектацію, сумісність, функції або інші характеристики.
+6. Якщо інформацію не вдалося перевірити, не додавай її як факт.
+7. Якщо модель неоднозначна, чесно зазнач це в описі.
+8. Не плутай різні покоління та модифікації товару.
+
+КАТЕГОРІЇ AMAZONSAN:
+${categories.join(", ")}
+
+ВИМОГИ ДО РЕЗУЛЬТАТУ:
+- title: зрозуміла, приваблива українська назва товару.
+- brand: підтверджений виробник або бренд. Якщо невідомий — порожній рядок.
+- model: точна підтверджена модель. Якщо невідома — порожній рядок.
+- category: одна найбільш відповідна категорія зі списку вище.
+- subcategory: коротка доречна підкатегорія українською.
+- description: повний, привабливий і професійний опис українською мовою. Додай вступ, призначення, переваги, особливості та підтверджені характеристики. Використовуй зрозумілі абзаци й символи •. Не використовуй Markdown-зірочки.
+- specs: масив підтверджених характеристик. Першими додай бренд і модель у форматі "Бренд: ..." та "Модель: ...", якщо вони відомі.
+- key_features: масив найважливіших підтверджених переваг.
+- package_contents: масив елементів комплектації лише тоді, коли комплектацію підтверджено.
+- keywords: масив доречних пошукових слів українською.
+- image_search_query: точний пошуковий запит для пошуку фотографій саме цієї моделі. Не вигадуй URL фотографій.
+
+Усі текстові поля мають бути українською, крім офіційних назв брендів і моделей.
+Якщо характеристика не підтверджена — не вигадуй її.
+Не додавай ціни, рейтинги, відгуки або наявність товару, якщо вони не підтверджені.
+`;
+
+    const schema = {
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        brand: { type: "string" },
+        model: { type: "string" },
+        category: { type: "string" },
+        subcategory: { type: "string" },
+        description: { type: "string" },
+        specs: {
+          type: "array",
+          items: { type: "string" },
+        },
+        key_features: {
+          type: "array",
+          items: { type: "string" },
+        },
+        package_contents: {
+          type: "array",
+          items: { type: "string" },
+        },
+        keywords: {
+          type: "array",
+          items: { type: "string" },
+        },
+        image_search_query: { type: "string" },
       },
-      temperature: 0.2,
-      max_completion_tokens: 2200,
-      reasoning_effort: "low"
-    });
+      required: [
+        "title",
+        "brand",
+        "model",
+        "category",
+        "subcategory",
+        "description",
+        "specs",
+        "key_features",
+        "package_contents",
+        "keywords",
+        "image_search_query",
+      ],
+      additionalProperties: false,
+    };
 
-    const message = result?.choices?.[0]?.message || {};
+    const aiResponse = await env.AI.run(
+      "@cf/zai-org/glm-4.7-flash",
+      {
+        messages: [
+          {
+            role: "system",
+            content: "Виконуй пошук і перевірку фактів. Поверни тільки коректний JSON відповідно до заданої схеми.",
+          },
+          { role: "user", content: prompt },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "amazonsan_product",
+            strict: true,
+            schema,
+          },
+        },
+        web_search_options: {
+          search_context_size: "medium",
+        },
+        max_completion_tokens: 3500,
+        temperature: 0.2,
+        reasoning_effort: "low",
+      }
+    );
 
-    const rawDescription =
-      typeof message.content === "string"
-        ? message.content
-        : Array.isArray(message.content)
-          ? message.content.map(part => part?.text || "").join("\n")
-          : result?.response || "";
+    let content =
+      aiResponse?.choices?.[0]?.message?.content ??
+      aiResponse?.response ??
+      aiResponse?.result?.response;
 
-    const description = String(rawDescription)
-      .replace(/\r/g, "")
-      .replace(/^\s*[-*]\s+/gm, "• ")
-      .replace(/\*\*(.*?)\*\*/gs, "$1")
-      .replace(/\*(.*?)\*/gs, "$1")
-      .replace(/\*/g, "")
-      .replace(/\n{3,}/g, "\n\n")
+    if (Array.isArray(content)) {
+      content = content
+        .map((part) => part.text || "")
+        .join("");
+    }
+
+    if (content && typeof content === "object") {
+      content = JSON.stringify(content);
+    }
+
+    if (typeof content !== "string" || !content.trim()) {
+      return json({ error: "AI не повернув опис товару. Спробуй ще раз." }, 502);
+    }
+
+    const cleaned = content
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
       .trim();
 
-    const annotations = Array.isArray(message.annotations)
-      ? message.annotations
-      : [];
+    let product;
 
-    const sources = annotations
-      .map(item => item?.url_citation || item)
-      .filter(item =>
-        typeof item?.url === "string" &&
-        /^https?:\/\//i.test(item.url)
-      )
-      .map(item => ({
-        title: String(item.title || item.url).slice(0, 180),
-        url: item.url
-      }))
-      .filter((item, index, all) =>
-        all.findIndex(source => source.url === item.url) === index
-      )
-      .slice(0, 8);
-
-    if (!description) {
+    try {
+      product = JSON.parse(cleaned);
+    } catch {
       return json({
-        error: "Не вдалося отримати опис. Уточни модель товару та спробуй ще раз.",
+        error: "AI повернув некоректні дані. Спробуй ще раз.",
       }, 502);
     }
 
-    return json({ description, sources });
+    const annotations =
+      aiResponse?.choices?.[0]?.message?.annotations || [];
 
-  } catch (error) {
-    console.error("AMAZONSAN AI description error:", error);
+    const sources = annotations
+      .map((item) => {
+        const url =
+          item.url ||
+          item.webpage?.url ||
+          item.source?.url ||
+          item.annotation?.url;
+
+        const title =
+          item.title ||
+          item.webpage?.title ||
+          item.source?.title ||
+          "";
+
+        return url ? { title, url } : null;
+      })
+      .filter(Boolean);
 
     return json({
-      error: "Помилка під час пошуку або створення опису. Спробуй ще раз.",
-    }, 500);
+      ...product,
+      sources,
+    });
+  } catch (error) {
+    return json(
+      {
+        error: error?.message || "Помилка AI-помічника. Спробуй ще раз.",
+      },
+      500
+    );
   }
 }
