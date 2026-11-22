@@ -237,35 +237,123 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    try{const rows=JSON.parse(await file.text());if(!Array.isArray(rows))throw Error('Очікується JSON-масив товарів');const clean=rows.map(({id,created_at,...p})=>({...p,created_by:session.user.id}));const {error}=await supabase.from('products').insert(clean);if(error)throw error;await reloadProducts();notify('Імпорт завершено.')}catch(e){notify('Помилка імпорту: '+e.message)}
  }
  const setField=(k,v)=>setForm(f=>({...f,[k]:v}))
- const generateAiDescription=async()=>{
-  if(!isAdmin||!session?.access_token){setAiError('Увійди в акаунт адміністратора.');return}
-  if(!form.title.trim()){setAiError('Спочатку вкажи назву товару.');return}
-  setAiBusy(true)
-  setAiError('')
-  try{
-    const response=await fetch('/api/ai-description',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        Authorization:`Bearer ${session.access_token}`
-      },
-      body:JSON.stringify({
-        title:form.title,
-        model:aiModel,
-        purpose:aiPurpose,
-        specs:form.specs
+   const generateAiDescription=async()=>{
+    if(!isAdmin||!session?.access_token){
+      setAiError('Увійди в акаунт адміністратора.')
+      return
+    }
+
+    if(!form.title.trim()){
+      setAiError('Спочатку введи назву товару.')
+      return
+    }
+
+    setAiBusy(true)
+    setAiError('')
+
+    try{
+      const response=await fetch('/api/ai-description',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          Authorization:`Bearer ${session.access_token}`
+        },
+        body:JSON.stringify({
+          title:form.title,
+          model:aiModel,
+          purpose:aiPurpose,
+          specs:form.specs
+        })
       })
-    })
-    const data=await response.json()
-    if(!response.ok)throw new Error(data.error||'Не вдалося створити опис.')
-    setField('description',data.description)
-    notify('AI створив опис. Перевір його перед збереженням товару.')
-  }catch(error){
-    setAiError(error.message||'Помилка AI-помічника. Спробуй ще раз.')
-  }finally{
-    setAiBusy(false)
+
+      const data=await response.json()
+
+      if(!response.ok){
+        throw new Error(data.error||'Не вдалося знайти інформацію про товар.')
+      }
+
+      if(data.title?.trim()){
+        setField('title',data.title.trim())
+      }
+
+      if(data.brand?.trim()||data.model?.trim()){
+        const brand=data.brand?.trim()||''
+        const model=data.model?.trim()||''
+        setAiModel([brand,model].filter(Boolean).join(' '))
+      }
+
+      if(data.category){
+        const normalize=value=>String(value||'')
+          .toLowerCase()
+          .replace(/[’‘ʼ']/g,"'")
+          .replace(/[^а-яіїєґa-z0-9]/gi,'')
+
+        const foundCategory=categories.find(
+          item=>normalize(item.name)===normalize(data.category)
+        )
+
+        if(foundCategory){
+          setField('category',foundCategory.name)
+
+          if(data.subcategory){
+            const foundSubcategory=foundCategory.subs.find(
+              item=>normalize(item)===normalize(data.subcategory)
+            )
+
+            setField('subcategory',foundSubcategory||'')
+          }else{
+            setField('subcategory','')
+          }
+        }
+      }
+
+      if(data.description?.trim()){
+        setField('description',data.description.trim())
+      }
+
+      const specLines=[]
+
+      if(data.brand) specLines.push(`Бренд: ${data.brand}`)
+      if(data.model) specLines.push(`Модель: ${data.model}`)
+
+      if(Array.isArray(data.specs)){
+        specLines.push(...data.specs.filter(Boolean))
+      }
+
+      if(Array.isArray(data.key_features)&&data.key_features.length){
+        specLines.push(
+          '',
+          'ПЕРЕВАГИ ТОВАРУ:',
+          ...data.key_features.filter(Boolean).map(item=>`• ${item}`)
+        )
+      }
+
+      if(Array.isArray(data.package_contents)&&data.package_contents.length){
+        specLines.push(
+          '',
+          'КОМПЛЕКТАЦІЯ:',
+          ...data.package_contents.filter(Boolean).map(item=>`• ${item}`)
+        )
+      }
+
+      if(Array.isArray(data.keywords)&&data.keywords.length){
+        specLines.push(
+          '',
+          `КЛЮЧОВІ СЛОВА: ${data.keywords.filter(Boolean).join(', ')}`
+        )
+      }
+
+      if(specLines.length){
+        setField('specs',specLines.join('\n'))
+      }
+
+      notify('AI знайшов інформацію та заповнив форму. Перевір усі дані перед збереженням.')
+    }catch(error){
+      setAiError(error.message||'Помилка AI-помічника. Спробуй ще раз.')
+    }finally{
+      setAiBusy(false)
+    }
   }
-}
  const sendInquiry=async()=>{
    if(!selected)return
    if(!inquiryForm.name.trim()||!inquiryForm.contact.trim()){notify('Вкажи ім’я та телефон або email для зв’язку.');return}
@@ -359,8 +447,8 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
 
 <div className="full">
   <button type="button" className="btn secondary" onClick={generateAiDescription} disabled={aiBusy}>
-    <Sparkles size={16}/>{aiBusy?'Створюю опис…':'Створити опис за допомогою AI'}
-  </button>
+  <Sparkles size={16}/>{aiBusy?'Шукаю товар та заповнюю форму…':'Знайти товар і заповнити форму'}
+</button>
   {aiError&&<p className="error">{aiError}</p>}
   <p className="muted">AI використовує вказані дані та характеристики. Перевір готовий текст і за потреби відредагуй його.</p>
 </div>
