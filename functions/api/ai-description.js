@@ -11,12 +11,10 @@ function json(data, status = 200) {
 
 export async function onRequestPost({ request, env }) {
   try {
-    // Перевірка підключення AI
     if (!env.AI) {
       return json({ error: "AI не підключено до Cloudflare Pages." }, 503);
     }
 
-    // Підключення до Supabase
     const supabaseUrl = (
       env.VITE_SUPABASE_URL || env.SUPABASE_URL || ""
     ).replace(/\/+$/, "");
@@ -30,7 +28,6 @@ export async function onRequestPost({ request, env }) {
       }, 503);
     }
 
-    // Перевірка авторизації
     const authorization = request.headers.get("Authorization") || "";
     const token = authorization.replace(/^Bearer\s+/i, "").trim();
 
@@ -51,7 +48,6 @@ export async function onRequestPost({ request, env }) {
 
     const user = await authResponse.json();
 
-    // Перевірка прав адміністратора
     const profileResponse = await fetch(
       `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=is_admin&limit=1`,
       {
@@ -76,7 +72,6 @@ export async function onRequestPost({ request, env }) {
       }, 403);
     }
 
-    // Отримання даних товару
     const body = await request.json();
 
     const title = String(body.title || "").trim().slice(0, 180);
@@ -88,70 +83,118 @@ export async function onRequestPost({ request, env }) {
       return json({ error: "Вкажи назву товару." }, 400);
     }
 
-    if (!model && !purpose && !specs) {
-      return json({
-        error: "Додай модель, призначення або характеристики товару.",
-      }, 400);
-    }
-
-    const userFacts = [
-      `Назва товару: ${title}`,
-      model ? `Модель: ${model}` : "",
-      purpose ? `Призначення: ${purpose}` : "",
-      specs ? `Підтверджені характеристики:\n${specs}` : "",
-    ].filter(Boolean).join("\n");
-
-    // Генерація опису через Cloudflare Workers AI
     const result = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
       messages: [
         {
           role: "system",
-          content: `Ти — професійний українськомовний редактор товарного каталогу AMAZONSAN.
+          content: `Ти — дослідник товарів і професійний редактор каталогу AMAZONSAN.
 
-Створи привабливий, грамотний і структурований опис товару українською мовою.
+ОБОВ'ЯЗКОВО використовуй вбудований пошук в інтернеті.
 
-Використовуй:
-- короткий цікавий вступ;
-- доречні підзаголовки;
-- переваги товару;
-- маркований список характеристик;
-- помірну кількість доречних емодзі.
+ПОШУК І ПЕРЕВІРКА:
+1. Знайди товар за точною назвою та моделлю.
+2. Спочатку перевір офіційний сайт виробника.
+3. Додатково перевір Amazon та інші надійні джерела.
+4. Переконайся, що знайдені характеристики стосуються саме цієї моделі та її модифікації.
+5. Збери максимально повний перелік підтверджених характеристик.
+6. Залежно від типу товару перевір розміри, вагу, матеріали, потужність, функції, живлення, акумулятор, підключення, сумісність, комплектацію та інші технічні параметри.
+7. Не використовуй характеристики схожих моделей.
+8. Якщо джерела суперечать одне одному, надавай перевагу офіційній інформації виробника.
+9. Не вигадуй відсутні дані. Непідтверджені характеристики пропускай.
 
-Пиши природно, зрозуміло, професійно та переконливо.
+СТВОРЕННЯ ОПИСУ:
+- Напиши повний, грамотний, привабливий опис українською мовою.
+- Створи цікавий вступ.
+- Опиши основні можливості та переваги.
+- Поясни практичну користь товару.
+- Додай окремий розділ із технічними характеристиками.
+- Використовуй усі знайдені достовірні характеристики, а не лише кілька найважливіших.
+- Структуруй текст короткими абзацами та підзаголовками.
 
-ВАЖЛИВО:
-Використовуй виключно факти, надані користувачем.
-Не вигадуй технічні характеристики, матеріали, сумісність, комплектацію, гарантію, сертифікати, країну виробництва або результати тестів.
-Не видавай припущення за факти.
-Якщо інформації недостатньо, не домислюй її та не створюй порожніх розділів.
+ФОРМАТУВАННЯ:
+- Використовуй звичайний текст.
+- Для списків використовуй маркер •.
+- НІКОЛИ не використовуй символи * або **.
+- Не став зірочки після речень.
+- Не використовуй Markdown-виділення.
+- Не додавай декоративні символи в кінці речень.
+- Емодзі використовуй помірно та доречно.
 
-Поверни лише готовий опис товару українською мовою.`
+ЯКЩО ПОШУК НЕВДАЛИЙ:
+Не вигадуй характеристики. Повідом, що товар не вдалося достовірно ідентифікувати, і попроси уточнити модель.
+
+Поверни лише готовий опис українською мовою.`
         },
         {
           role: "user",
-          content: `Підготуй опис для картки товару на основі цих даних:\n\n${userFacts}`
+          content: `Знайди в інтернеті та підготуй повний опис саме цього товару.
+
+Назва: ${title}
+Модель: ${model || "Не вказана"}
+Призначення: ${purpose || "Не вказано"}
+Додаткові дані адміністратора: ${specs || "Немає"}
+
+Потрібно знайти всі доступні достовірні характеристики та включити їх в опис.`
         }
-      ]
+      ],
+      web_search_options: {
+        search_context_size: "medium"
+      },
+      temperature: 0.2,
+      max_completion_tokens: 2200,
+      reasoning_effort: "low"
     });
 
-    const description = String(
-  result?.response ||
-  result?.choices?.[0]?.message?.content ||
-  ""
-).trim();
+    const message = result?.choices?.[0]?.message || {};
+
+    const rawDescription =
+      typeof message.content === "string"
+        ? message.content
+        : Array.isArray(message.content)
+          ? message.content.map(part => part?.text || "").join("\n")
+          : result?.response || "";
+
+    const description = String(rawDescription)
+      .replace(/\r/g, "")
+      .replace(/^\s*[-*]\s+/gm, "• ")
+      .replace(/\*\*(.*?)\*\*/gs, "$1")
+      .replace(/\*(.*?)\*/gs, "$1")
+      .replace(/\*/g, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+    const annotations = Array.isArray(message.annotations)
+      ? message.annotations
+      : [];
+
+    const sources = annotations
+      .map(item => item?.url_citation || item)
+      .filter(item =>
+        typeof item?.url === "string" &&
+        /^https?:\/\//i.test(item.url)
+      )
+      .map(item => ({
+        title: String(item.title || item.url).slice(0, 180),
+        url: item.url
+      }))
+      .filter((item, index, all) =>
+        all.findIndex(source => source.url === item.url) === index
+      )
+      .slice(0, 8);
 
     if (!description) {
       return json({
-        error: "AI не повернув готовий опис. Спробуй ще раз.",
+        error: "Не вдалося отримати опис. Уточни модель товару та спробуй ще раз.",
       }, 502);
     }
 
-    return json({ description });
+    return json({ description, sources });
 
   } catch (error) {
     console.error("AMAZONSAN AI description error:", error);
+
     return json({
-      error: "Не вдалося створити опис. Перевір підключення та спробуй ще раз.",
+      error: "Помилка під час пошуку або створення опису. Спробуй ще раз.",
     }, 500);
   }
 }
