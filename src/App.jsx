@@ -308,39 +308,42 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
         }
       }
 
+      
+      const descriptionParts=[]
+
       if(data.description?.trim()){
-        setField('description',data.description.trim())
+        descriptionParts.push(data.description.trim())
       }
 
-      const specLines=[]
-
-     
-
-      if(Array.isArray(data.specs)){
-        specLines.push(...data.specs.filter(Boolean))
+      if(Array.isArray(data.specs)&&data.specs.length){
+        descriptionParts.push(
+          'ХАРАКТЕРИСТИКИ:',
+          ...data.specs.filter(Boolean)
+        )
       }
 
       if(Array.isArray(data.key_features)&&data.key_features.length){
-        specLines.push(
-          '',
+        descriptionParts.push(
           'ПЕРЕВАГИ ТОВАРУ:',
           ...data.key_features.filter(Boolean).map(item=>`• ${item}`)
         )
       }
 
       if(Array.isArray(data.package_contents)&&data.package_contents.length){
-        specLines.push(
-          '',
+        descriptionParts.push(
           'КОМПЛЕКТАЦІЯ:',
           ...data.package_contents.filter(Boolean).map(item=>`• ${item}`)
         )
       }
 
       if(Array.isArray(data.keywords)&&data.keywords.length){
-        specLines.push(
-          '',
+        descriptionParts.push(
           `КЛЮЧОВІ СЛОВА: ${data.keywords.filter(Boolean).join(', ')}`
         )
+      }
+
+      if(descriptionParts.length){
+        setField('description',descriptionParts.join('\n\n'))
       }
 
       if(specLines.length){
