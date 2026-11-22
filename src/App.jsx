@@ -314,8 +314,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
 
       const specLines=[]
 
-      if(data.brand) specLines.push(`Бренд: ${data.brand}`)
-      if(data.model) specLines.push(`Модель: ${data.model}`)
+     
 
       if(Array.isArray(data.specs)){
         specLines.push(...data.specs.filter(Boolean))
@@ -414,12 +413,28 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
  const adminForm=<div className="modal wide" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">КЕРУВАННЯ КАТАЛОГОМ</span><h2>{editing?'Редагувати товар':'Додати товар'}</h2></div><button className="icon-btn" onClick={()=>setAdminOpen(false)}><X/></button></div>
    <div className="form-grid">
     <label className="full">Назва товару<input value={form.title} onChange={e=>setField('title',e.target.value)} placeholder="Наприклад, бездротові навушники"/></label>
-    <div className="full">
+    
+<div className="full">
   <button type="button" className="btn secondary" onClick={generateAiDescription} disabled={aiBusy}>
-    <Sparkles size={16}/>{aiBusy?'Шукаю товар та заповнюю форму…':'Знайти товар і заповнити форму'}
+    <Sparkles size={16}/>
+    {aiBusy ? 'Шукаю товар та заповнюю форму…' : 'Знайти товар і заповнити форму'}
   </button>
-  {aiError&&<p className="error">{aiError}</p>}
-  <p className="muted">AI використовує вказані дані та характеристики. Перевір готовий текст і за потреби відредагуй його.</p>
+
+  {aiError && <p className="error">{aiError}</p>}
+
+  <p className="muted">
+    AI додає лише інформацію, яку вдалося підтвердити. Невідомі дані залишаються незаповненими.
+  </p>
+
+  <label className="full">
+    Опис
+    <textarea
+      rows="5"
+      value={form.description || ''}
+      onChange={e => setField('description', e.target.value)}
+      placeholder="Тут з’явиться перевірений опис товару. За потреби доповни його самостійно."
+    />
+  </label>
 </div>
     <label>Категорія<select value={form.category} onChange={e=>{setField('category',e.target.value);setField('subcategory','')}}>{categories.map(c=><option>{c.name}</option>)}</select></label>
     <label>Підкатегорія<select value={form.subcategory} onChange={e=>setField('subcategory',e.target.value)}><option value="">Оберіть підкатегорію</option>{(categories.find(c=>c.name===form.category)?.subs||[]).map(s=><option>{s}</option>)}</select></label>
@@ -453,7 +468,6 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
 
 <label className="full">Призначення товару (для AI)<textarea rows="2" value={aiPurpose} onChange={e=>setAiPurpose(e.target.value)} placeholder="Для чого призначений товар і кому буде корисний"/></label>
 
-<label className="full">Опис<textarea rows="5" value={form.description||''} onChange={e=>setField('description',e.target.value)} placeholder="Опис українською мовою або результат AI"/></label>
     <label className="full">Характеристики (кожна з нового рядка)<textarea rows="3" value={form.specs||''} onChange={e=>setField('specs',e.target.value)} placeholder="Колір: чорний&#10;Підключення: Bluetooth"/></label>
     <label>Артикул / SKU<input value={form.sku||''} onChange={e=>setField('sku',e.target.value)}/></label>
     <label>Статус<select value={form.status||'published'} onChange={e=>setField('status',e.target.value)}><option value="published">Опубліковано</option><option value="draft">Чернетка</option></select></label>
