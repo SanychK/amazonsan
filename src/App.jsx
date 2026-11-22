@@ -379,7 +379,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
  const currentSubs=categories.find(c=>c.name===category)?.subs||[]
  const openHeroCategory = name => {
   setCategory(name)
-  setCategoryFocus(true)
+  setCategoryFocus(name !== 'Усі категорії')
   setSubcategory('Усі підкатегорії')
   setOnlyFav(false)
   setView('catalog')
