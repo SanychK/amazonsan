@@ -190,13 +190,8 @@ ${categories.join(", ")}
           },
           { role: "user", content: prompt },
         ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "amazonsan_product",
-            strict: true,
-            schema,
-          },
+                chat_template_kwargs: {
+          enable_thinking: false,
         },
         web_search_options: {
           search_context_size: "medium",
