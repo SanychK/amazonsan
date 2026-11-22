@@ -11,7 +11,11 @@ function App(){
  const [sort,setSort]=useState('new'),[onlyFav,setOnlyFav]=useState(false),[view,setView]=useState('catalog'),[selected,setSelected]=useState(null),[selectedImageIndex,setSelectedImageIndex]=useState(0)
  const [authOpen,setAuthOpen]=useState(false),[authMode,setAuthMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[authError,setAuthError]=useState('')
  const [adminOpen,setAdminOpen]=useState(false),[editing,setEditing]=useState(null),[form,setForm]=useState(emptyForm),[notice,setNotice]=useState(''),[loading,setLoading]=useState(false)
-const [sidebar,setSidebar]=useState(false)
+ const [aiModel,setAiModel]=useState('')
+ const [aiPurpose,setAiPurpose]=useState('')
+ const [aiBusy,setAiBusy]=useState(false)
+ const [aiError,setAiError]=useState('')
+ const [sidebar,setSidebar]=useState(false)
 const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setShowPassword]=useState(false),[settingsOpen,setSettingsOpen]=useState(false),[siteIcon,setSiteIcon]=useState('/favicon.svg')
  const [inquiryOpen,setInquiryOpen]=useState(false),[inquiryForm,setInquiryForm]=useState({name:'',contact:'',message:''}),[inquiryBusy,setInquiryBusy]=useState(false),[inquiries,setInquiries]=useState([])
  const [categoryFocus,setCategoryFocus]=useState(false)
@@ -233,6 +237,35 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    try{const rows=JSON.parse(await file.text());if(!Array.isArray(rows))throw Error('Очікується JSON-масив товарів');const clean=rows.map(({id,created_at,...p})=>({...p,created_by:session.user.id}));const {error}=await supabase.from('products').insert(clean);if(error)throw error;await reloadProducts();notify('Імпорт завершено.')}catch(e){notify('Помилка імпорту: '+e.message)}
  }
  const setField=(k,v)=>setForm(f=>({...f,[k]:v}))
+ const generateAiDescription=async()=>{
+  if(!isAdmin||!session?.access_token){setAiError('Увійди в акаунт адміністратора.');return}
+  if(!form.title.trim()){setAiError('Спочатку вкажи назву товару.');return}
+  setAiBusy(true)
+  setAiError('')
+  try{
+    const response=await fetch('/api/ai-description',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        Authorization:`Bearer ${session.access_token}`
+      },
+      body:JSON.stringify({
+        title:form.title,
+        model:aiModel,
+        purpose:aiPurpose,
+        specs:form.specs
+      })
+    })
+    const data=await response.json()
+    if(!response.ok)throw new Error(data.error||'Не вдалося створити опис.')
+    setField('description',data.description)
+    notify('AI створив опис. Перевір його перед збереженням товару.')
+  }catch(error){
+    setAiError(error.message||'Помилка AI-помічника. Спробуй ще раз.')
+  }finally{
+    setAiBusy(false)
+  }
+}
  const sendInquiry=async()=>{
    if(!selected)return
    if(!inquiryForm.name.trim()||!inquiryForm.contact.trim()){notify('Вкажи ім’я та телефон або email для зв’язку.');return}
@@ -320,7 +353,19 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
     ))}
   </div>
     <label className="full">Посилання на товар Amazon<input value={form.amazon_url||''} onChange={e=>setField('amazon_url',e.target.value)} placeholder="https://www.amazon.com/..."/></label>
-    <label className="full">Опис<textarea rows="4" value={form.description||''} onChange={e=>setField('description',e.target.value)} placeholder="Опис українською мовою"/></label>
+    <label className="full">Модель товару (для AI)<input value={aiModel} onChange={e=>setAiModel(e.target.value)} placeholder="Наприклад, WH-1000XM5"/></label>
+
+<label className="full">Призначення товару (для AI)<textarea rows="2" value={aiPurpose} onChange={e=>setAiPurpose(e.target.value)} placeholder="Для чого призначений товар і кому буде корисний"/></label>
+
+<div className="full">
+  <button type="button" className="btn secondary" onClick={generateAiDescription} disabled={aiBusy}>
+    <Sparkles size={16}/>{aiBusy?'Створюю опис…':'Створити опис за допомогою AI'}
+  </button>
+  {aiError&&<p className="error">{aiError}</p>}
+  <p className="muted">AI використовує вказані дані та характеристики. Перевір готовий текст і за потреби відредагуй його.</p>
+</div>
+
+<label className="full">Опис<textarea rows="5" value={form.description||''} onChange={e=>setField('description',e.target.value)} placeholder="Опис українською мовою або результат AI"/></label>
     <label className="full">Характеристики (кожна з нового рядка)<textarea rows="3" value={form.specs||''} onChange={e=>setField('specs',e.target.value)} placeholder="Колір: чорний&#10;Підключення: Bluetooth"/></label>
     <label>Артикул / SKU<input value={form.sku||''} onChange={e=>setField('sku',e.target.value)}/></label>
     <label>Статус<select value={form.status||'published'} onChange={e=>setField('status',e.target.value)}><option value="published">Опубліковано</option><option value="draft">Чернетка</option></select></label>
