@@ -99,6 +99,9 @@ export async function onRequestPost({ request, env }) {
 11. Якщо інформації мало, створи короткий опис. Не заповнюй його вигаданими фактами.
 12. Якщо немає достатньо інформації навіть для змістовного опису, поверни порожній рядок.
 13. Не згадуй, що текст створений штучним інтелектом.
+14. Ніколи не копіюй назву товару або модель у поле description замість опису.
+15. Опис повинен містити змістовний текст про товар, а не просто його назву.
+16. Якщо наданих даних недостатньо для створення змістовного опису, поверни порожній рядок.
 
 РЕЗУЛЬТАТ:
 Поверни тільки готовий опис товару українською мовою у полі description.
@@ -133,9 +136,6 @@ export async function onRequestPost({ request, env }) {
         },
         chat_template_kwargs: {
           enable_thinking: false,
-        },
-        web_search_options: {
-          search_context_size: "medium",
         },
         max_completion_tokens: 3500,
         temperature: 0.2,
@@ -244,6 +244,31 @@ if (!product) {
 }
     const annotations =
       aiResponse?.choices?.[0]?.message?.annotations || [];
+
+const description = String(product.description || "").trim();
+
+const normalizeText = (value) =>
+  String(value || "")
+    .toLocaleLowerCase("uk-UA")
+    .replace(/[^\p{L}\p{N}]+/gu, "");
+
+const normalizedDescription = normalizeText(description);
+
+const forbiddenTexts = [
+  normalizeText(title),
+  normalizeText(model),
+  normalizeText(`${title} ${model}`),
+  normalizeText(`${model} ${title}`)
+].filter(Boolean);
+
+if (
+  !description ||
+  forbiddenTexts.includes(normalizedDescription)
+) {
+  return json({
+    error: "AI повернув назву товару замість опису. Додай призначення або характеристики товару й спробуй ще раз."
+  }, 422);
+}
 
     const sources = annotations
       .map((item) => {
