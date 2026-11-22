@@ -250,39 +250,71 @@ let content =
     }
 
     
+
 const cleaned = content
   .replace(/^```(?:json)?\s*/i, "")
   .replace(/\s*```$/, "")
   .trim();
 
-let product;
+let product = null;
 
-try {
-  try {
-    product = JSON.parse(cleaned);
-  } catch {
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
+for (let start = 0; start < cleaned.length; start++) {
+  if (cleaned[start] !== "{") continue;
 
-    if (start === -1 || end === -1 || end <= start) {
-      throw new Error("JSON не знайдено");
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < cleaned.length; i++) {
+    const char = cleaned[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
     }
 
-    product = JSON.parse(cleaned.slice(start, end + 1));
+    if (char === '"') {
+      inString = true;
+    } else if (char === "{") {
+      depth++;
+    } else if (char === "}") {
+      depth--;
+
+      if (depth === 0) {
+        try {
+          const parsed = JSON.parse(cleaned.slice(start, i + 1));
+
+          if (
+            parsed &&
+            typeof parsed === "object" &&
+            !Array.isArray(parsed)
+          ) {
+            product = parsed;
+          }
+        } catch {
+          // Продовжити пошук наступного JSON-об'єкта
+        }
+
+        break;
+      }
+    }
   }
 
-  if (
-    !product ||
-    typeof product !== "object" ||
-    Array.isArray(product)
-  ) {
-    throw new Error("Некоректна структура відповіді");
-  }
-} catch {
+  if (product) break;
+}
+
+if (!product) {
   return json({
-    error: "AI не зміг сформувати коректну картку товару. Спробуй ще раз."
+    error: "AI не повернув коректний JSON. Потрібна додаткова перевірка відповіді."
   }, 502);
 }
+
     const annotations =
       aiResponse?.choices?.[0]?.message?.annotations || [];
 
