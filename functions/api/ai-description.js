@@ -249,21 +249,40 @@ let content =
       return json({ error: "AI не повернув опис товару. Спробуй ще раз." }, 502);
     }
 
-    const cleaned = content
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/, "")
-      .trim();
+    
+const cleaned = content
+  .replace(/^```(?:json)?\s*/i, "")
+  .replace(/\s*```$/, "")
+  .trim();
 
-    let product;
+let product;
 
-    try {
-      product = JSON.parse(cleaned);
-    } catch {
-      return json({
-        error: "AI повернув некоректні дані. Спробуй ще раз.",
-      }, 502);
+try {
+  try {
+    product = JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+
+    if (start === -1 || end === -1 || end <= start) {
+      throw new Error("JSON не знайдено");
     }
 
+    product = JSON.parse(cleaned.slice(start, end + 1));
+  }
+
+  if (
+    !product ||
+    typeof product !== "object" ||
+    Array.isArray(product)
+  ) {
+    throw new Error("Некоректна структура відповіді");
+  }
+} catch {
+  return json({
+    error: "AI не зміг сформувати коректну картку товару. Спробуй ще раз."
+  }, 502);
+}
     const annotations =
       aiResponse?.choices?.[0]?.message?.annotations || [];
 
