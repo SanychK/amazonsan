@@ -185,21 +185,25 @@ ${categories.join(", ")}
         subcategory: { type: "string" },
         description: { type: "string" },
         specs: {
-          type: "array",
-          items: { type: "string" },
-        },
-        key_features: {
-          type: "array",
-          items: { type: "string" },
-        },
-        package_contents: {
-          type: "array",
-          items: { type: "string" },
-        },
-        keywords: {
-          type: "array",
-          items: { type: "string" },
-        },
+  type: "array",
+  maxItems: 15,
+  items: { type: "string" },
+},
+key_features: {
+  type: "array",
+  maxItems: 6,
+  items: { type: "string" },
+},
+package_contents: {
+  type: "array",
+  maxItems: 8,
+  items: { type: "string" },
+},
+keywords: {
+  type: "array",
+  maxItems: 8,
+  items: { type: "string" },
+},
         image_search_query: { type: "string" },
       },
       required: [
