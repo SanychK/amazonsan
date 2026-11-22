@@ -346,10 +346,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
         setField('description',descriptionParts.join('\n\n'))
       }
 
-      if(specLines.length){
-        setField('specs',specLines.join('\n'))
-      }
-
+      
       notify('AI знайшов інформацію та заповнив форму. Перевір усі дані перед збереженням.')
     }catch(error){
       setAiError(error.message||'Помилка AI-помічника. Спробуй ще раз.')
