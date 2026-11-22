@@ -738,7 +738,9 @@ footer{color:#7c8eaa}
   }
 }
 /* Режим перегляду категорій — товари одразу під шапкою */
+.main.category-focus > .hero-layout,
 .main.category-focus > .hero,
+.main.category-focus > .new-arrivals-section,
 .main.category-focus > .future-stats,
 .main.category-focus > .engage-toolbar,
 .main.category-focus > .promo-section,
