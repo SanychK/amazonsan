@@ -14,6 +14,32 @@ import {supabase, configured} from './supabase'
 
 const money = n => n == null || n === '' ? '—' : new Intl.NumberFormat('uk-UA',{style:'currency',currency:'UAH',maximumFractionDigits:0}).format(Number(n))
 const emptyForm = {title:'',category:categories[0].name,subcategory:'',price_uah:'',original_price_uah:'',price_usd:'',description:'',image_url:'',amazon_url:'',sku:'',specs:'',is_new:true,is_popular:false,is_best_seller:false,is_recommended:false,is_exclusive:false,is_editor_pick:false,is_deal_of_day:false,stock_status:'in_stock',status:'published'}
+const categoryIcons = {
+  'Електроніка': Smartphone,
+  'Дім і кухня': House,
+  'Одяг і взуття': Shirt,
+  'Краса та догляд': Sparkles,
+  'Здоров’я': HeartPulse,
+  'Спорт і туризм': Dumbbell,
+  'Автотовари': CarFront,
+  'Дитячі товари': Baby,
+  'Іграшки та хобі': Puzzle,
+  'Інструменти': Wrench,
+  'Товари для тварин': PawPrint,
+  'Офіс і канцелярія': BriefcaseBusiness,
+  'Продукти та напої': Coffee,
+  'Музика': Music2,
+  'Сад і город': Sprout,
+  'Ювелірні вироби': Gem,
+  'Багаж і подорожі': Luggage,
+  'Товари для бізнесу': Store,
+  'Інше': Shapes
+}
+
+const CategoryIcon = ({name, size = 20}) => {
+  const Icon = categoryIcons[name] || Package
+  return <Icon size={size} strokeWidth={1.8} />
+}
 function App(){
  const [products,setProducts]=useState(demoProducts),[stockFilter,setStockFilter]=useState('all'),[session,setSession]=useState(null),[profile,setProfile]=useState(null)
  const [favorites,setFavorites]=useState([]),[query,setQuery]=useState(''),[category,setCategory]=useState('Усі категорії'),[subcategory,setSubcategory]=useState('Усі підкатегорії')
@@ -608,7 +634,7 @@ const generateAiDescription=async()=>{
   <div className="layout">
    <aside className={`sidebar ${sidebar?'open':''}`}><div className="side-head"><span>КАТАЛОГ</span><button className="mobile-menu icon-btn" onClick={()=>setSidebar(false)}><X/></button></div>
     <button className={`cat-link ${category==='Усі категорії'?'selected':''}`} onClick={()=>openHeroCategory('Усі категорії')}><LayoutGrid size={17}/> Усі категорії</button>
-{categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>{setExpandedCategory(expandedCategory===c.name?'':c.name);openHeroCategory(c.name)}}><span className="cat-icon">{c.icon}</span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{expandedCategory===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>{setSubcategory(s);setCategoryFocus(true);setSidebar(false);window.scrollTo({top:0,behavior:'smooth'})}}>{s}</button>)}</div>}</div>)}
+{categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>{setExpandedCategory(expandedCategory===c.name?'':c.name);openHeroCategory(c.name)}}><span className="cat-icon"><CategoryIcon name={c.name} size={19}/></span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{expandedCategory===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>{setSubcategory(s);setCategoryFocus(true);setSidebar(false);window.scrollTo({top:0,behavior:'smooth'})}}>{s}</button>)}</div>}</div>)}
     <div className="sidebar-bottom"><div className="mini-note"><Sparkles size={16}/><b>Знаходь цікаве</b><p>Каталог корисних товарів з Amazon в одному місці.</p></div><span>© 2026 amazonsan</span></div>
    </aside>
    <main className={`main ${categoryFocus?'category-focus':''}`}>
@@ -633,7 +659,7 @@ const generateAiDescription=async()=>{
  <section className="home-section category-showcase">
    <div className="section-head"><div><span className="eyebrow">ЗНАЙДИ СВІЙ НАПРЯМ</span><h2>Популярні категорії</h2><p>Обирай категорію та переходь до відповідних товарів</p></div></div>
    <div className="category-tiles">
-     {categories.map((c,i)=>{const count=publishedProducts.filter(p=>p.category===c.name).length;return <button key={c.name} className="category-tile" onClick={()=>openHeroCategory(c.name)}><span className="category-tile-icon">{c.icon||<Package/>}</span><b>{c.name}</b><small>{count} {count===1?'товар':count>1&&count<5?'товари':'товарів'}</small><ChevronRight size={16}/></button>})}
+     {categories.map((c,i)=>{const count=publishedProducts.filter(p=>p.category===c.name).length;return <button key={c.name} className="category-tile" onClick={()=>openHeroCategory(c.name)}><span className="category-tile-icon"><CategoryIcon name={c.name} size={25}/></span><b>{c.name}</b><small>{count} {count===1?'товар':count>1&&count<5?'товари':'товарів'}</small><ChevronRight size={16}/></button>})}
    </div>
  </section>
 
@@ -715,7 +741,7 @@ const generateAiDescription=async()=>{
             style={{'--menu-delay':`${i*25}ms`}}
             onClick={()=>openHeroCategory(c.name)}
           >
-            <span className="category-menu-icon">{c.icon}</span>
+            <span className="category-menu-icon"><CategoryIcon name={c.name} size={22}/></span>
             <span><b>{c.name}</b><small>{c.subs.length} підкатегорій</small></span>
             <ChevronRight/>
           </button>
