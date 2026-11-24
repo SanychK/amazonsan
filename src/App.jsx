@@ -384,6 +384,130 @@ const generateAiDescription=async()=>{
    {name:'Товари для бізнесу',left:2.5,top:86.6,width:15.0,height:11.0},
    {name:'Інше',left:18.8,top:86.6,width:14.9,height:11.0},
  ]
+ 
+ // ПІДГОТОВКА ДАНИХ ДЛЯ ГОЛОВНОЇ СТОРІНКИ
+
+ const publishedProducts = useMemo(
+   () => products.filter(p => p.status === 'published'),
+   [products]
+ )
+
+ const newestProducts = useMemo(
+   () => [...publishedProducts].sort(
+     (a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+   ),
+   [publishedProducts]
+ )
+
+ const heroProducts = useMemo(() => {
+   const featured = publishedProducts.filter(p =>
+     p.is_recommended || p.is_best_seller || p.is_editor_pick
+   )
+
+   const source = featured.length ? featured : newestProducts
+
+   return [...source].sort((a,b) => {
+     const score = p =>
+       Number(!!p.is_recommended) * 3 +
+       Number(!!p.is_best_seller) * 2 +
+       Number(!!p.is_editor_pick)
+
+     return score(b) - score(a) ||
+       new Date(b.created_at || 0) - new Date(a.created_at || 0)
+   }).slice(0,5)
+ }, [publishedProducts,newestProducts])
+
+ const brandGroups = useMemo(() => {
+   const groups = publishedProducts.reduce((acc,p) => {
+     const brand = (p.brand || '').trim()
+
+     if (brand) {
+       if (!acc[brand]) acc[brand] = []
+       acc[brand].push(p)
+     }
+
+     return acc
+   }, {})
+
+   return Object.entries(groups)
+     .sort((a,b) => b[1].length - a[1].length)
+     .slice(0,12)
+ }, [publishedProducts])
+
+ // ПОШУК ТА ІСТОРІЯ ПОШУКУ
+
+ const runSearch = value => {
+   const term = String(value || '').trim()
+
+   setQuery(term)
+   setCategory('Усі категорії')
+   setSubcategory('Усі підкатегорії')
+   setOnlyFav(false)
+   setBudgetCap('')
+   setStockFilter('all')
+   setView('catalog')
+   setSearchFocused(false)
+
+   if (term) {
+     setSearchHistory(old => {
+       const next = [
+         term,
+         ...old.filter(x =>
+           String(x).toLowerCase() !== term.toLowerCase()
+         )
+       ].slice(0,8)
+
+       localStorage.setItem(
+         'amazonsan_search_history',
+         JSON.stringify(next)
+       )
+
+       return next
+     })
+   }
+ }
+
+ const searchSuggestions = (() => {
+   const term = query.trim().toLowerCase()
+
+   if (!term) {
+     return searchHistory.map(label => ({
+       type: 'Історія',
+       label,
+       action: () => runSearch(label)
+     }))
+   }
+
+   const productMatches = publishedProducts
+     .filter(p => {
+       const text = [
+         p.title,
+         p.brand,
+         p.category,
+         p.subcategory
+       ].filter(Boolean).join(' ').toLowerCase()
+
+       return text.includes(term)
+     })
+     .slice(0,5)
+     .map(p => ({
+       type: 'Товар',
+       label: p.title,
+       action: () => runSearch(p.title)
+     }))
+
+   const categoryMatches = categories
+     .filter(c => c.name.toLowerCase().includes(term))
+     .slice(0,3)
+     .map(c => ({
+       type: 'Категорія',
+       label: c.name,
+       action: () => openHeroCategory(c.name)
+     }))
+
+   return [...productMatches,...categoryMatches]
+ })()
+
  const adminForm=<div className="modal wide" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">КЕРУВАННЯ КАТАЛОГОМ</span><h2>{editing?'Редагувати товар':'Додати товар'}</h2></div><button className="icon-btn" onClick={()=>setAdminOpen(false)}><X/></button></div>
    <div className="form-grid">
     <label className="full">Назва товару<input value={form.title} onChange={e=>setField('title',e.target.value)} placeholder="Наприклад, бездротові навушники"/></label>
