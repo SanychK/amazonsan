@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react'
-import {Search, Heart, UserRound, Menu, X, SlidersHorizontal, Plus, Pencil, Trash2, Upload, Download, LogOut, Settings, Sparkles, Package, ChevronRight, ExternalLink, ImagePlus, ShieldCheck, LayoutGrid, Clock3, Star, Mail, Lock, Eye, EyeOff, Check, Info} from 'lucide-react'
+import {Search, Heart, UserRound, Menu, X, Bell, SlidersHorizontal, Plus, Pencil, Trash2, Upload, Download, LogOut, Settings, Sparkles, Package, ChevronRight, ExternalLink, ImagePlus, ShieldCheck, LayoutGrid, Clock3, Star, Mail, Lock, Eye, EyeOff, Check, Info} from 'lucide-react'
 import {categories, demoProducts} from './data'
 import {supabase, configured} from './supabase'
 
@@ -18,6 +18,7 @@ function App(){
  const [sidebar,setSidebar]=useState(false)
 const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setShowPassword]=useState(false),[settingsOpen,setSettingsOpen]=useState(false),[siteIcon,setSiteIcon]=useState('/favicon.svg')
  const [inquiryOpen,setInquiryOpen]=useState(false),[inquiryForm,setInquiryForm]=useState({name:'',contact:'',message:''}),[inquiryBusy,setInquiryBusy]=useState(false),[inquiries,setInquiries]=useState([])
+  const [unreadInquiries,setUnreadInquiries]=useState(0)
  const [categoryFocus,setCategoryFocus]=useState(false)
  const [expandedCategory,setExpandedCategory]=useState('')
  const [compare,setCompare]=useState([]),[recentlyViewed,setRecentlyViewed]=useState(()=>{try{return JSON.parse(localStorage.getItem('amazonsan_recent')||'[]')}catch{return []}}),[smartFinder,setSmartFinder]=useState(false),[finderBudget,setFinderBudget]=useState(''),[budgetCap,setBudgetCap]=useState(''),[finderNeed,setFinderNeed]=useState(''),[finderFeature,setFinderFeature]=useState(''),[featureSettings,setFeatureSettings]=useState(()=>{try{return {...{new:true,bestsellers:true,deals:true,recommendations:true,recent:true,smart:true},...JSON.parse(localStorage.getItem('amazonsan_sections')||'{}')}}catch{return {new:true,bestsellers:true,deals:true,recommendations:true,recent:true,smart:true}}})
@@ -29,6 +30,26 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    const {data:{subscription}}=supabase.auth.onAuthStateChange((_e,s)=>setSession(s))
    return ()=>subscription.unsubscribe()
  },[])
+ useEffect(()=>{
+  if(!configured||!isAdmin||!session?.user?.id)return
+  const seenKey=`amazonsan_inquiries_seen_${session.user.id}`
+  const getSeenAt=()=>localStorage.getItem(seenKey)||'1970-01-01T00:00:00.000Z'
+  let active=true
+  const refreshUnread=async()=>{
+    const {count,error}=await supabase.from('product_inquiries').select('id',{count:'exact',head:true}).gt('created_at',getSeenAt())
+    if(active&&!error)setUnreadInquiries(count||0)
+  }
+  refreshUnread()
+  const timer=window.setInterval(refreshUnread,15000)
+  const channel=supabase.channel(`amazonsan-inquiries-${session.user.id}`)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'product_inquiries'},refreshUnread)
+    .subscribe()
+  return ()=>{
+    active=false
+    window.clearInterval(timer)
+    supabase.removeChannel(channel)
+  }
+ },[isAdmin,session?.user?.id])
  useEffect(()=>{
   if(!configured) return
   const loadCatalog=async()=>{
@@ -308,12 +329,22 @@ const generateAiDescription=async()=>{
    if(!isAdmin||!configured)return
    const {data,error}=await supabase.from('product_inquiries').select('*').order('created_at',{ascending:false})
    if(error){notify('Не вдалося завантажити звернення: '+error.message);return}
+   const latestCreatedAt=(data||[]).reduce((latest,item)=>item.created_at&&item.created_at>latest?item.created_at:latest,'')
+   localStorage.setItem(`amazonsan_inquiries_seen_${session.user.id}`,latestCreatedAt||new Date().toISOString())
+   setUnreadInquiries(0)
    setInquiries(data||[]);setView('inquiries')
  }
  const updateInquiryStatus=async(id,status)=>{
    const {error}=await supabase.from('product_inquiries').update({status}).eq('id',id)
    if(error){notify('Не вдалося оновити статус.');return}
    setInquiries(rows=>rows.map(row=>row.id===id?{...row,status}:row))
+ }
+ const deleteInquiry=async(id)=>{
+   if(!isAdmin||!window.confirm('Видалити це звернення? Цю дію не можна скасувати.'))return
+   const {error}=await supabase.from('product_inquiries').delete().eq('id',id)
+   if(error){notify('Не вдалося видалити звернення: '+error.message);return}
+   setInquiries(rows=>rows.filter(row=>row.id!==id))
+   notify('Звернення видалено.')
  }
 
  const currentSubs=categories.find(c=>c.name===category)?.subs||[]
@@ -441,7 +472,7 @@ const generateAiDescription=async()=>{
   }}
   placeholder="Знайти товар, категорію або бренд..."
 /><kbd>⌕</kbd></div>
-   <div className="top-actions"><button className={`icon-btn ${onlyFav?'active':''}`} onClick={()=>{setOnlyFav(!onlyFav);setView('catalog')}} title="Обране"><Heart/><span className="count">{favorites.length}</span></button><button className="account-btn" onClick={()=>session?setView('account'):setAuthOpen(true)}><UserRound size={18}/><span>{session?'Мій акаунт':'Увійти'}</span></button></div>
+   <div className="top-actions"><button className={`icon-btn ${onlyFav?'active':''}`} onClick={()=>{setOnlyFav(!onlyFav);setView('catalog')}} title="Обране"><Heart/><span className="count">{favorites.length}</span></button>{isAdmin&&<button className={`notification-btn ${unreadInquiries>0?'has-unread':''}`} onClick={openInquiries} title={unreadInquiries>0?`Нові звернення: ${unreadInquiries}`:'Сповіщення'} aria-label={unreadInquiries>0?`Нові звернення: ${unreadInquiries}`:'Сповіщення'}><Bell size={19}/>{unreadInquiries>0&&<span className="notification-count">{unreadInquiries>99?'99+':unreadInquiries}</span>}</button>}<button className="account-btn" onClick={()=>session?setView('account'):setAuthOpen(true)}><UserRound size={18}/><span>{session?'Мій акаунт':'Увійти'}</span></button></div>
   </div></header>
   <div className="layout">
    <aside className={`sidebar ${sidebar?'open':''}`}><div className="side-head"><span>КАТАЛОГ</span><button className="mobile-menu icon-btn" onClick={()=>setSidebar(false)}><X/></button></div>
@@ -615,7 +646,7 @@ const generateAiDescription=async()=>{
       </section>
       {compare.length>0&&<section className="compare-panel"><div className="section-head"><div><span className="eyebrow">ПОРІВНЯННЯ</span><h2>Обрані для порівняння ({compare.length}/4)</h2></div><button className="btn secondary small" onClick={()=>setCompare([])}>Очистити</button></div><div className="compare-grid">{compare.map(id=>products.find(p=>p.id===id)).filter(Boolean).map(p=><div key={p.id}><b>{p.title}</b><span>{money(p.price_uah)}</span><span>{p.stock_status==='out_of_stock'?'Немає в наявності':'В наявності'}</span><button onClick={()=>toggleCompare(p.id)}>Прибрати</button></div>)}</div></section>}
     </>}
-    {view==='inquiries'&&isAdmin&&<section className="account-page"><span className="eyebrow">ПРИВАТНО ДЛЯ ВЛАСНИКА</span><h1>Звернення відвідувачів</h1><p>Це приватні запити щодо товарів. На сайті немає кошика, оформлення замовлення чи приймання платежів.</p><button className="btn secondary" onClick={()=>setView('catalog')}>Повернутися до каталогу</button><div className="inquiry-list">{inquiries.length?inquiries.map(item=><article className="inquiry-card" key={item.id}><div><b>{item.product_title}</b><small>{item.customer_name} · {item.customer_contact}</small><small>{new Date(item.created_at).toLocaleString('uk-UA')} · {item.price_uah==null?'Ціну не вказано':money(item.price_uah)}</small>{item.message&&<p>{item.message}</p>}</div><select value={item.status} onChange={e=>updateInquiryStatus(item.id,e.target.value)}><option value="new">Нове</option><option value="contacted">Зв’язалися</option><option value="discussing">Узгодження</option><option value="completed">Завершено</option><option value="declined">Відхилено</option></select></article>):<p>Поки що звернень немає.</p>}</div></section>}
+    {view==='inquiries'&&isAdmin&&<section className="account-page"><span className="eyebrow">ПРИВАТНО ДЛЯ ВЛАСНИКА</span><h1>Звернення відвідувачів</h1><p>Це приватні запити щодо товарів. На сайті немає кошика, оформлення замовлення чи приймання платежів.</p><button className="btn secondary" onClick={()=>setView('catalog')}>Повернутися до каталогу</button><div className="inquiry-list">{inquiries.length?inquiries.map(item=><article className="inquiry-card" key={item.id}><div><b>{item.product_title}</b><small>{item.customer_name} · {item.customer_contact}</small><small>{new Date(item.created_at).toLocaleString('uk-UA')} · {item.price_uah==null?'Ціну не вказано':money(item.price_uah)}</small>{item.message&&<p>{item.message}</p>}</div><select value={item.status} onChange={e=>updateInquiryStatus(item.id,e.target.value)}><option value="new">Нове</option><option value="contacted">Зв’язалися</option><option value="discussing">Узгодження</option><option value="completed">Завершено</option><option value="declined">Відхилено</option></select><button className="inquiry-delete-btn" onClick={()=>deleteInquiry(item.id)} title="Видалити звернення" aria-label="Видалити звернення"><Trash2 size={16}/></button></article>):<p>Поки що звернень немає.</p>}</div></section>}
     {view==='account'&&<section className="account-page"><span className="eyebrow">ОСОБИСТИЙ ПРОСТІР</span><h1>Мій кабінет</h1><div className="account-card"><div className="avatar">{session?.user?.email?.[0]?.toUpperCase()||'A'}</div><div><h3>{session?.user?.email}</h3><p>{isAdmin?'Адміністратор':'Користувач amazonsan'}</p></div></div><div className="account-actions"><button className="btn secondary" onClick={()=>{setOnlyFav(true);setView('catalog')}}><Heart/> Моє обране ({favorites.length})</button>{isAdmin&&<button className="btn secondary" onClick={()=>setSettingsOpen(true)}><Settings/> Налаштування сайту</button>}<button className="btn secondary" onClick={signOut}><LogOut/> Вийти</button></div>{!configured&&<p className="setup-warning">Демонстраційний режим: підключи Supabase, щоб зберігати профіль та обране між пристроями.</p>}</section>}
     {isAdmin&&<div className="admin-bar"><div><ShieldCheck size={17}/> Панель адміністратора</div><div className="admin-tools"><button className="btn secondary small" onClick={openInquiries}><Mail size={16}/> Звернення</button><button className="btn primary small" onClick={()=>{setEditing(null);setForm(emptyForm);setAdminOpen(true)}}><Plus size={16}/> Додати товар</button><button className="btn secondary small" onClick={exportJSON}><Download size={16}/> Експорт JSON</button><label className="btn secondary small file-btn"><Upload size={16}/> Імпорт JSON<input type="file" accept=".json,application/json" onChange={e=>e.target.files?.[0]&&importJSON(e.target.files[0])}/></label></div></div>}
     <footer><div className="footer-brand">amazonsan<span>•</span></div><p>Каталог товарів для зручного пошуку та вибору.</p><div className="footer-links"><button onClick={()=>notify('Зв’язок: додай свою контактну пошту в налаштуваннях проєкту.')}>Контакти</button><button onClick={()=>notify('Політика конфіденційності: додай власний документ перед публічним запуском.')}>Конфіденційність</button><button onClick={()=>notify('amazonsan — незалежний каталог, не пов’язаний з Amazon.')}>Про проєкт</button></div><small>amazonsan не є офіційним сайтом Amazon і не афілійований з Amazon.</small></footer>
