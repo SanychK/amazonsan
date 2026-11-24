@@ -19,6 +19,9 @@ function App(){
 const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setShowPassword]=useState(false),[settingsOpen,setSettingsOpen]=useState(false),[siteIcon,setSiteIcon]=useState('/favicon.svg')
  const [inquiryOpen,setInquiryOpen]=useState(false),[inquiryForm,setInquiryForm]=useState({name:'',contact:'',message:''}),[inquiryBusy,setInquiryBusy]=useState(false),[inquiries,setInquiries]=useState([])
   const [unreadInquiries,setUnreadInquiries]=useState(0)
+  const [heroIndex,setHeroIndex]=useState(0)
+  const [searchFocused,setSearchFocused]=useState(false)
+  const [searchHistory,setSearchHistory]=useState(()=>{try{return JSON.parse(localStorage.getItem('amazonsan_search_history')||'[]')}catch{return []}})
  const [categoryFocus,setCategoryFocus]=useState(false)
  const [expandedCategory,setExpandedCategory]=useState('')
  const [compare,setCompare]=useState([]),[recentlyViewed,setRecentlyViewed]=useState(()=>{try{return JSON.parse(localStorage.getItem('amazonsan_recent')||'[]')}catch{return []}}),[smartFinder,setSmartFinder]=useState(false),[finderBudget,setFinderBudget]=useState(''),[budgetCap,setBudgetCap]=useState(''),[finderNeed,setFinderNeed]=useState(''),[finderFeature,setFinderFeature]=useState(''),[featureSettings,setFeatureSettings]=useState(()=>{try{return {...{new:true,bestsellers:true,deals:true,recommendations:true,recent:true,smart:true},...JSON.parse(localStorage.getItem('amazonsan_sections')||'{}')}}catch{return {new:true,bestsellers:true,deals:true,recommendations:true,recent:true,smart:true}}})
@@ -113,7 +116,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    if(query.trim()){
   const words=query.toLowerCase().trim().split(/\s+/).filter(Boolean)
   arr=arr.filter(p=>{
-    const text=[p.title,p.description,p.category,p.subcategory,p.sku]
+    const text=[p.title,p.brand,p.description,p.category,p.subcategory,p.sku]
       .filter(Boolean)
       .join(' ')
       .toLowerCase()
@@ -457,21 +460,16 @@ const generateAiDescription=async()=>{
   setCategoryFocus(false)
   window.scrollTo({top:0,behavior:'smooth'})
 }}><span className="brand-mark">a<span>•</span></span><span>amazonsan<small>КАТАЛОГ ТОВАРІВ</small></span></button>
-   <div className="searchbox"><Search size={19}/><input
+   <div className="search-wrap"><div className="searchbox"><Search size={19}/><input
   value={query}
-  onChange={e=>{
-  setQuery(e.target.value)
-  setView('catalog')
-  if(e.target.value.trim()){
-    setCategory('Усі категорії')
-    setSubcategory('Усі підкатегорії')
-    setOnlyFav(false)
-    setBudgetCap('')
-    setStockFilter('all')
-  }
-  }}
+  onFocus={()=>setSearchFocused(true)}
+  onBlur={()=>window.setTimeout(()=>setSearchFocused(false),160)}
+  onKeyDown={e=>{if(e.key==='Enter')runSearch(query);if(e.key==='Escape')setSearchFocused(false)}}
+  onChange={e=>{setQuery(e.target.value);setView('catalog');if(e.target.value.trim()){setCategory('Усі категорії');setSubcategory('Усі підкатегорії');setOnlyFav(false);setBudgetCap('');setStockFilter('all')}}}
   placeholder="Знайти товар, категорію або бренд..."
-/><kbd>⌕</kbd></div>
+/><button type="button" className="search-submit" onMouseDown={e=>e.preventDefault()} onClick={()=>runSearch(query)} aria-label="Шукати"><Search size={17}/></button></div>
+  {searchFocused&&<div className="search-suggestions">{query.trim()&&searchSuggestions.length===0?<p>Нічого не знайдено. Натисни Enter, щоб переглянути результати.</p>:searchSuggestions.map((item,i)=><button key={`${item.type}-${item.label}-${i}`} onMouseDown={e=>e.preventDefault()} onClick={item.action}><Search size={14}/><span>{item.label}</span><small>{item.type}</small></button>)}{!query.trim()&&searchHistory.length>0&&<button className="clear-search-history" onMouseDown={e=>e.preventDefault()} onClick={()=>{setSearchHistory([]);localStorage.removeItem('amazonsan_search_history')}}>Очистити історію пошуку</button>}</div>}
+ </div>
    <div className="top-actions"><button className={`icon-btn ${onlyFav?'active':''}`} onClick={()=>{setOnlyFav(!onlyFav);setView('catalog')}} title="Обране"><Heart/><span className="count">{favorites.length}</span></button>{isAdmin&&<button className={`notification-btn ${unreadInquiries>0?'has-unread':''}`} onClick={openInquiries} title={unreadInquiries>0?`Нові звернення: ${unreadInquiries}`:'Сповіщення'} aria-label={unreadInquiries>0?`Нові звернення: ${unreadInquiries}`:'Сповіщення'}><Bell size={19}/>{unreadInquiries>0&&<span className="notification-count">{unreadInquiries>99?'99+':unreadInquiries}</span>}</button>}<button className="account-btn" onClick={()=>session?setView('account'):setAuthOpen(true)}><UserRound size={18}/><span>{session?'Мій акаунт':'Увійти'}</span></button></div>
   </div></header>
   <div className="layout">
@@ -483,148 +481,52 @@ const generateAiDescription=async()=>{
    <main className={`main ${categoryFocus?'category-focus':''}`}>
     {view==='catalog'&&<>
 {!query.trim() && <>
-<div className="hero-layout">
-  <section className="hero hero-banner" aria-label="Ласкаво просимо до AMAZONSAN">
-    <img
-      className="hero-background"
-      src="/hero-showcase.png"
-      alt="Добірка сучасної електроніки та товарів"
-      fetchPriority="high"
-    />
-    <div className="hero-overlay">
-      <button className="btn primary hero-cta" onClick={() => setCategoryMenuOpen(true)}>
-        Каталог товарів <ChevronRight size={17}/>
-      </button>
-      <span className="eyebrow">ВІДКРИВАЙ · ОБИРАЙ · ЗБЕРІГАЙ</span>
-      <h1>Більше можливостей <em>для тебе</em></h1>
-      <p>Знаходь цікаві товари з Amazon у зручному каталозі AMAZONSAN.</p>
-      <div className="hero-benefits">
-        <span>✓ Зручний пошук</span>
-        <span>✓ Обране</span>
-        <span>✓ Нові надходження</span>
-      </div>
-    </div>
-  </section>
+ <section className="home-hero-carousel" aria-label="Рекомендовані товари AMAZONSAN">
+   <div className="home-hero-heading">
+     <div><span className="eyebrow">AMAZONSAN · ВІДКРИВАЙ НОВЕ</span><h1>Знайди те, що <em>потрібно саме зараз</em></h1><p>Добірка товарів із каталогу — переглядай, порівнюй і зберігай цікаве.</p></div>
+     <button className="btn secondary small" onClick={()=>{setCategory('Усі категорії');document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'})}}>Увесь каталог <ChevronRight size={16}/></button>
+   </div>
+   {heroProducts.length>0?<div className="hero-carousel-stage">
+     <button className="hero-carousel-arrow prev" onClick={()=>setHeroIndex(i=>(i-1+heroProducts.length)%heroProducts.length)} aria-label="Попередній товар"><ChevronRight/></button>
+     {heroProducts.map((p,i)=><article key={p.id} className={`hero-feature-card ${i===(heroIndex%heroProducts.length)?'active':''}`} aria-hidden={i!==heroIndex}>
+       <button className="hero-feature-image" onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package size={54}/>}</button>
+       <div className="hero-feature-copy"><span className="eyebrow">{p.is_best_seller?'ХІТ ПРОДАЖІВ':p.is_editor_pick?'ВИБІР AMAZONSAN':p.is_recommended?'РЕКОМЕНДУЄМО':'ЩОЙНО ДОДАНО'}</span><h2>{p.title}</h2><p>{p.description||'Переглянь характеристики та детальну інформацію про товар.'}</p><div className="hero-feature-bottom"><b>{money(p.price_uah)}</b><button className="btn primary" onClick={()=>openProduct(p)}>Детальніше <ChevronRight size={16}/></button></div></div>
+     </article>)}
+     <button className="hero-carousel-arrow next" onClick={()=>setHeroIndex(i=>(i+1)%heroProducts.length)} aria-label="Наступний товар"><ChevronRight/></button>
+     <div className="hero-carousel-dots">{heroProducts.map((p,i)=><button key={p.id} className={i===(heroIndex%heroProducts.length)?'active':''} onClick={()=>setHeroIndex(i)} aria-label={`Показати товар ${i+1}`}/>)}</div>
+   </div>:<div className="hero-empty"><Package/><b>Каталог наповнюється</b><span>Нові товари з’являться тут після додавання.</span></div>}
+ </section>
 
-  <aside className="hero-side-promo">
-    <span className="eyebrow">AMAZONSAN PICKS</span>
-    <h2>Цікаве вже чекає на тебе</h2>
-    <p>Відкривай нові товари, знаходь корисні речі та обирай найкраще.</p>
-    <button className="btn primary" onClick={() => setCategoryMenuOpen(true)}>
-      Переглянути каталог <ChevronRight size={17}/>
-    </button>
-    <div className="hero-promo-decoration">✦</div>
-  </aside>
-</div>
-     
-<section className="new-arrivals-section">
-  <div className="section-head">
-    <div>
-      <span className="eyebrow">ЩОЙНО ДОДАНО</span>
-      <h2>Новинки AMAZONSAN</h2>
-      <p>Найсвіжіші товари нашого каталогу</p>
-    </div>
-    <button
-      className="btn secondary small"
-      onClick={() => {
-        setCategory('Усі категорії')
-        setSubcategory('Усі підкатегорії')
-        setOnlyFav(false)
-        setQuery('')
-        setBudgetCap('')
-        setStockFilter('all')
-        setSort('new')
-        document.querySelector('.catalog-section')?.scrollIntoView({ behavior: 'smooth' })
-      }}
-    >
-      Усі новинки <ChevronRight size={16}/>
-    </button>
-  </div>
+ <section className="home-section category-showcase">
+   <div className="section-head"><div><span className="eyebrow">ЗНАЙДИ СВІЙ НАПРЯМ</span><h2>Популярні категорії</h2><p>Обирай категорію та переходь до відповідних товарів</p></div></div>
+   <div className="category-tiles">
+     {categories.map((c,i)=>{const count=publishedProducts.filter(p=>p.category===c.name).length;return <button key={c.name} className="category-tile" onClick={()=>openHeroCategory(c.name)}><span className="category-tile-icon">{c.icon||<Package/>}</span><b>{c.name}</b><small>{count} {count===1?'товар':count>1&&count<5?'товари':'товарів'}</small><ChevronRight size={16}/></button>})}
+   </div>
+ </section>
 
-  <div className="product-grid">
-    {[...products]
-      .filter(p => p.status === 'published' || isAdmin)
-      .sort((a,b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-      .slice(0,8)
-      .map(p => (
-        <article className="product-card future-product" key={`new-${p.id}`}>
-          <div className="product-image" onClick={() => openProduct(p)} role="button" tabIndex={0}>
-            {(p.image_urls?.[0] || p.image_url)
-              ? <img src={p.image_urls?.[0] || p.image_url} alt={p.title} loading="lazy"/>
-              : <div className="image-placeholder"><Package/></div>}
-            <span className="tag new">НОВИНКА</span>
-            {p.stock_status === 'out_of_stock' && <span className="tag soldout">НЕМАЄ В НАЯВНОСТІ</span>}
-            <button
-              className={`fav-btn ${favorites.includes(p.id) ? 'liked' : ''}`}
-              onClick={e => { e.stopPropagation(); toggleFavorite(p.id) }}
-              title="В обране"
-            >
-              <Heart size={16} fill={favorites.includes(p.id) ? 'currentColor' : 'none'}/>
-            </button>
-          </div>
-          <div className="product-info">
-            <span className="product-category">{p.category}</span>
-            <h3 onClick={() => openProduct(p)}>{p.title}</h3>
-            <p>{p.description || 'Детальна інформація про товар незабаром.'}</p>
-            <div className="product-bottom">
-              <div>
-                {p.original_price_uah > p.price_uah && <del className="old-price">{money(p.original_price_uah)}</del>}
-                <b>{money(p.price_uah)}</b>
-                {p.price_usd != null && <small>${p.price_usd} на Amazon</small>}
-              </div>
-              <button className="arrow-btn" onClick={() => openProduct(p)} aria-label="Детальніше">
-                <ChevronRight size={18}/>
-              </button>
-            </div>
-            <button
-              className={`compare-toggle ${compare.includes(p.id) ? 'selected' : ''}`}
-              onClick={() => toggleCompare(p.id)}
-            >
-              {compare.includes(p.id) ? '✓ Додано до порівняння' : '+ Порівняти'}
-            </button>
-          </div>
-        </article>
-      ))}
-  </div>
-</section>
+ <section className="home-section">
+   <div className="section-head"><div><span className="eyebrow">ЩОЙНО ДОДАНО</span><h2>Нові надходження</h2><p>Останні товари, додані до каталогу</p></div><button className="btn secondary small" onClick={()=>{setSort('new');document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'})}}>Усі товари <ChevronRight size={16}/></button></div>
+   <div className="home-product-row">{newestProducts.slice(0,6).map(p=><article className="home-mini-product" key={`arrival-${p.id}`}><button className="home-mini-image" onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package/>}</button><span>{p.category}</span><b onClick={()=>openProduct(p)}>{p.title}</b><strong>{money(p.price_uah)}</strong></article>)}</div>
+ </section>
 
-      <div className="future-stats">
-        <div><span>КАТАЛОГ</span><strong>{products.length.toLocaleString('uk-UA')}</strong><small>товарів у базі</small></div>
-        <div><span>КАТЕГОРІЇ</span><strong>{categories.length}</strong><small>напрямів покупок</small></div>
-        <div><span>ОБРАНЕ</span><strong>{favorites.length}</strong><small>збережених товарів</small></div>
-        <div><span>НОВИНКИ</span><strong>{products.filter(p=>p.is_new && (p.status==='published'||isAdmin)).length}</strong><small>свіжих надходжень</small></div>
-      </div>
+ {brandGroups.length>0&&<section className="home-section brand-section"><div className="section-head"><div><span className="eyebrow">ВІДОМИЙ ВИБІР</span><h2>Популярні бренди</h2><p>Переглядай товари конкретного бренду</p></div></div><div className="brand-strip">{brandGroups.map(([brand,items])=><button key={brand} className="brand-tile" onClick={()=>runSearch(brand)}><b>{brand}</b><small>{items.length} {items.length===1?'товар':items.length>1&&items.length<5?'товари':'товарів'}</small></button>)}</div></section>}
+
+ {featureSettings.bestsellers&&publishedProducts.some(p=>p.is_best_seller)&&<section className="home-section"><div className="section-head"><div><span className="eyebrow">ПОЗНАЧЕНО В КАТАЛОЗІ</span><h2>Хіти продажів</h2><p>Товари, які адміністратор позначив як хіти</p></div></div><div className="home-product-row">{publishedProducts.filter(p=>p.is_best_seller).slice(0,6).map(p=><article className="home-mini-product" key={`best-${p.id}`}><button className="home-mini-image" onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package/>}</button><span>{p.category}</span><b onClick={()=>openProduct(p)}>{p.title}</b><strong>{money(p.price_uah)}</strong></article>)}</div></section>}
+
+ {featureSettings.recommendations&&<section className="home-section"><div className="section-head"><div><span className="eyebrow">ДОБІРКА AMAZONSAN</span><h2>Можливо, вас зацікавить</h2><p>Редакційна добірка товарів, позначених для рекомендації</p></div></div>{publishedProducts.some(p=>p.is_recommended)?<div className="home-product-row">{publishedProducts.filter(p=>p.is_recommended).slice(0,6).map(p=><article className="home-mini-product" key={`rec-${p.id}`}><button className="home-mini-image" onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package/>}</button><span>{p.category}</span><b onClick={()=>openProduct(p)}>{p.title}</b><strong>{money(p.price_uah)}</strong></article>)}</div>:<p className="home-muted">Добірка з’явиться, коли товари будуть позначені як рекомендовані.</p>}</section>}
+
+ {category!=='Усі категорії'&&<section className="home-section"><div className="section-head"><div><span className="eyebrow">У ВИБРАНОМУ НАПРЯМІ</span><h2>Популярне у категорії «{category}»</h2><p>Позиції цієї категорії, позначені як популярні або рекомендовані</p></div></div>{publishedProducts.filter(p=>p.category===category&&(p.is_popular||p.is_best_seller||p.is_recommended)).length>0?<div className="home-product-row">{publishedProducts.filter(p=>p.category===category&&(p.is_popular||p.is_best_seller||p.is_recommended)).slice(0,6).map(p=><article className="home-mini-product" key={`category-pop-${p.id}`}><button className="home-mini-image" onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package/>}</button><span>{p.category}</span><b onClick={()=>openProduct(p)}>{p.title}</b><strong>{money(p.price_uah)}</strong></article>)}</div>:<p className="home-muted">У цій категорії поки немає товарів із позначкою популярності або рекомендації.</p>}</section>}
+
+ {recentlyViewed.length>0&&(()=>{const last=products.find(p=>p.id===recentlyViewed[0]);const related=last?publishedProducts.filter(p=>p.id!==last.id&&p.category===last.category).slice(0,6):[];return related.length>0?<section className="home-section"><div className="section-head"><div><span className="eyebrow">НА ОСНОВІ ПЕРЕГЛЯДУ</span><h2>Схожі товари</h2><p>Інші товари з категорії «{last.category}»</p></div></div><div className="home-product-row">{related.map(p=><article className="home-mini-product" key={`similar-${p.id}`}><button className="home-mini-image" onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package/>}</button><span>{p.category}</span><b onClick={()=>openProduct(p)}>{p.title}</b><strong>{money(p.price_uah)}</strong></article>)}</div></section>:null})()}
+
+ {featureSettings.deals&&publishedProducts.some(p=>Number(p.original_price_uah)>Number(p.price_uah)&&p.price_uah!=null)&&<section className="home-section promo-feature"><div className="section-head"><div><span className="eyebrow">ВИГІДНІ ПРОПОЗИЦІЇ</span><h2>Акції та спеціальні пропозиції</h2><p>Показуємо лише товари з указаною старою та актуальною ціною</p></div></div><div className="home-product-row">{publishedProducts.filter(p=>Number(p.original_price_uah)>Number(p.price_uah)&&p.price_uah!=null).slice(0,6).map(p=><article className="home-mini-product" key={`deal-${p.id}`}><button className="home-mini-image" onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package/>}<span className="sale-pill">−{Math.round((1-Number(p.price_uah)/Number(p.original_price_uah))*100)}%</span></button><span>{p.category}</span><b onClick={()=>openProduct(p)}>{p.title}</b><strong>{money(p.price_uah)}</strong><del>{money(p.original_price_uah)}</del></article>)}</div></section>}
+
+ {publishedProducts.some(p=>p.is_editor_pick)&&<section className="home-section editor-picks"><div className="section-head"><div><span className="eyebrow">ОСОБЛИВА ДОБІРКА</span><h2>Вибір AMAZONSAN</h2><p>Товари, відібрані власником каталогу</p></div></div><div className="home-product-row">{publishedProducts.filter(p=>p.is_editor_pick).slice(0,6).map(p=><article className="home-mini-product" key={`pick-${p.id}`}><button className="home-mini-image" onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package/>}</button><span>{p.category}</span><b onClick={()=>openProduct(p)}>{p.title}</b><strong>{money(p.price_uah)}</strong></article>)}</div></section>}
+
+ {featureSettings.recent&&recentlyViewed.length>0&&<section className="home-section"><div className="section-head"><div><span className="eyebrow">ПОВЕРНИСЯ ДО ЦІКАВОГО</span><h2>Нещодавно переглянуті</h2></div></div><div className="home-product-row">{recentlyViewed.map(id=>products.find(p=>p.id===id)).filter(Boolean).map(p=><article className="home-mini-product" key={`recent-${p.id}`}><button className="home-mini-image" onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package/>}</button><span>{p.category}</span><b onClick={()=>openProduct(p)}>{p.title}</b><strong>{money(p.price_uah)}</strong></article>)}</div></section>}
+
+ <section className="home-info-strip"><div><Sparkles/><b>Зручний пошук і вибір</b><span>Знаходь товари за назвою та категорією</span></div><div><Heart/><b>Список бажань</b><span>Зберігай цікаві позиції в обраному</span></div><div><ShieldCheck/><b>Інформаційний каталог</b><span>Запит власнику — без онлайн-оплати</span></div>{featureSettings.smart&&<div className="home-info-action"><Sparkles/><b>Потрібна допомога з вибором?</b><span>Підбери товари за бюджетом і призначенням</span><button className="btn primary small" onClick={()=>setSmartFinder(true)}>Розумний підбір</button></div>}</section>
  </>}
-     {!query.trim() && <>
-      <section className="engage-toolbar">
-        <button className="engage-chip" onClick={()=>setSmartFinder(true)}><Sparkles size={17}/> Розумний підбір товару</button>
-      <button
-  className="engage-chip"
-  onClick={() => {
-    if (compare.length === 0) {
-      window.alert('Поки що немає товарів для порівняння. Спочатку додай товари до каталогу та вибери «+ Порівняти».')
-      return
-    }
-
-    document.querySelector('.compare-panel')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center'
-    })
-  }}
->
-  Порівняння <b>{compare.length}</b>
-</button>
-        <button className="engage-chip" onClick={()=>{setOnlyFav(true);setView('catalog')}}><Heart size={16}/> Список бажань</button>
-      </section>
-      {featureSettings.new&&products.some(p=>p.is_new&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ЩОЙНО ДОДАНО</span><h2>Новинки тижня</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_new).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      {featureSettings.recommendations&&products.some(p=>p.is_recommended&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ДОБІРКА AMAZONSAN</span><h2>Рекомендуємо</h2><p>Редакційна добірка власника каталогу</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_recommended).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      {featureSettings.bestsellers&&products.some(p=>p.is_best_seller&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОБИРАЮТЬ ЧАСТІШЕ</span><h2>Хіти продажів</h2><p>Товари, які власник каталогу позначив як найпопулярніші</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_best_seller).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      {products.some(p=>p.status==='published'&&p.is_editor_pick)&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОСОБЛИВА ДОБІРКА</span><h2>Вибір AMAZONSAN</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_editor_pick).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      {products.some(p=>p.status==='published'&&p.is_deal_of_day)&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОБРАНА ПРОПОЗИЦІЯ</span><h2>Товар дня</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_deal_of_day).slice(0,1).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      {featureSettings.deals&&products.some(p=>p.status==='published'&&p.original_price_uah>p.price_uah)&&<section className="promo-section deal-section"><div className="section-head"><div><span className="eyebrow">ВИГІДНІ ПРОПОЗИЦІЇ</span><h2>Акції та знижки</h2><p>Порівнюй стару та актуальну ціну</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.original_price_uah>p.price_uah).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><del>{money(p.original_price_uah)}</del><b>{money(p.price_uah)} · −{Math.round((1-p.price_uah/p.original_price_uah)*100)}%</b></button>)}</div></section>}
-      {featureSettings.smart&&<section className="smart-callout"><div><span className="eyebrow">НЕ ЗНАЄШ, ЩО ОБРАТИ?</span><h2>Знайдемо те, що підходить саме тобі</h2><p>Вкажи бюджет і призначення — підберемо відповідні позиції з каталогу.</p></div><button className="btn primary" onClick={()=>setSmartFinder(true)}>Підібрати товар <ChevronRight size={17}/></button></section>}
-      {featureSettings.recent&&recentlyViewed.length>0&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ПОВЕРНИСЯ ДО ЦІКАВОГО</span><h2>Нещодавно переглянуті</h2></div></div><div className="promo-strip">{recentlyViewed.map(id=>products.find(p=>p.id===id)).filter(Boolean).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      </>}
       <section className="catalog-section future-catalog">
         <div className="section-head">
           <div><span className="eyebrow">ВІДКРИВАЙ · ОБИРАЙ · ПОРІВНЮЙ</span><h2>{onlyFav?'Обране':category==='Усі категорії'?'Каталог товарів':category}</h2><p>Знайди потрібне серед товарів AMAZONSAN</p></div>
