@@ -167,6 +167,13 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
      return score(b)-score(a)||new Date(b.created_at||0)-new Date(a.created_at||0)
    }).slice(0,8)
  },[publishedProducts])
+ useEffect(()=>{
+   if(view!=='catalog'||query.trim()||categoryFocus||heroProducts.length<2)return
+   const timer=window.setInterval(()=>{
+     if(document.visibilityState==='visible')setHeroIndex(index=>(index+1)%heroProducts.length)
+   },6500)
+   return ()=>window.clearInterval(timer)
+ },[view,query,categoryFocus,heroProducts.length])
  const brandGroups=useMemo(()=>{
    const grouped=new Map()
    publishedProducts.forEach(p=>{
@@ -563,53 +570,19 @@ const generateAiDescription=async()=>{
   <div className="layout">
    <aside className={`sidebar ${sidebar?'open':''}`}><div className="side-head"><span>КАТАЛОГ</span><button className="mobile-menu icon-btn" onClick={()=>setSidebar(false)}><X/></button></div>
     <button className={`cat-link ${category==='Усі категорії'?'selected':''}`} onClick={()=>openHeroCategory('Усі категорії')}><LayoutGrid size={17}/> Усі категорії</button>
-{categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>{setExpandedCategory(expandedCategory===c.name?'':c.name);openHeroCategory(c.name)}}><span className="cat-icon"><CategoryIcon name={c.name} size={18}/></span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{expandedCategory===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>{setSubcategory(s);setCategoryFocus(true);setSidebar(false);window.scrollTo({top:0,behavior:'smooth'})}}>{s}</button>)}</div>}</div>)}
+{categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>{setExpandedCategory(expandedCategory===c.name?'':c.name);openHeroCategory(c.name)}}><span className="cat-icon"><CategoryIcon name={c.name} size={18}/></span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{expandedCategory===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>{setSubcategory(s);setCategoryFocus(true);setOnlyFav(false);setOnlyNew(false);setQuery('');setView('catalog');setSelected(null);setSidebar(false);setCategoryMenuOpen(false);window.scrollTo({top:0,behavior:'smooth'})}}>{s}</button>)}</div>}</div>)}
     <div className="sidebar-bottom"><div className="mini-note"><Sparkles size={16}/><b>Знаходь цікаве</b><p>Каталог корисних товарів з Amazon в одному місці.</p></div><span>© 2026 amazonsan</span></div>
    </aside>
    <main className={`main ${categoryFocus?'category-focus':''}`}>
     {view==='catalog'&&<>
 {!query.trim() && <>
-<div className="hero-layout">
-  <section className="hero hero-banner" aria-label="Ласкаво просимо до AMAZONSAN">
-    <img
-      className="hero-background"
-      src="/hero-showcase.png"
-      alt="Добірка сучасної електроніки та товарів"
-      fetchPriority="high"
-    />
-    <div className="hero-overlay">
-      <button className="btn primary hero-cta" onClick={() => setCategoryMenuOpen(true)}>
-        Каталог товарів <ChevronRight size={17}/>
-      </button>
-      <span className="eyebrow">ВІДКРИВАЙ · ОБИРАЙ · ЗБЕРІГАЙ</span>
-      <h1>Більше можливостей <em>для тебе</em></h1>
-      <p>Знаходь цікаві товари з Amazon у зручному каталозі AMAZONSAN.</p>
-      <div className="hero-benefits">
-        <span>✓ Зручний пошук</span>
-        <span>✓ Обране</span>
-        <span>✓ Нові надходження</span>
-      </div>
-    </div>
-  </section>
-
-  <aside className="hero-side-promo">
-    <span className="eyebrow">AMAZONSAN PICKS</span>
-    <h2>Цікаве вже чекає на тебе</h2>
-    <p>Відкривай нові товари, знаходь корисні речі та обирай найкраще.</p>
-    <button className="btn primary" onClick={() => setCategoryMenuOpen(true)}>
-      Переглянути каталог <ChevronRight size={17}/>
-    </button>
-    <div className="hero-promo-decoration">✦</div>
-  </aside>
-</div>
-
 <section className="home-hero-carousel" aria-label="Рекомендовані товари AMAZONSAN">
   <div className="home-hero-heading">
-    <div><span className="eyebrow">AMAZONSAN · ВІДКРИВАЙ НОВЕ</span><h1>Знайди те, що <em>потрібно саме зараз</em></h1><p>Добірка товарів із каталогу — переглядай, порівнюй і зберігай цікаве.</p></div>
+    <div><span className="eyebrow">ВІДКРИВАЙ · ОБИРАЙ · ЗБЕРІГАЙ</span><h1>Знайди те, що <em>потрібно саме зараз</em></h1><p>Актуальні товари, цікаві знахідки та добірки AMAZONSAN — перегортай карусель і відкривай своє.</p></div>
     <button className="btn secondary small" onClick={()=>{setCategory('Усі категорії');setOnlyFav(false);setOnlyNew(false);document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'})}}>Увесь каталог <ChevronRight size={16}/></button>
   </div>
   {heroProducts.length>0?<div className="hero-carousel-stage"
-    onPointerDown={e=>{carouselDragStart.current=e.clientX;suppressCarouselClick.current=false;e.currentTarget.setPointerCapture?.(e.pointerId)}}
+    onPointerDown={e=>{carouselDragStart.current=e.clientX;suppressCarouselClick.current=false;}}
     onPointerUp={e=>{if(carouselDragStart.current!==null){const delta=e.clientX-carouselDragStart.current;if(Math.abs(delta)>45&&heroProducts.length>1){suppressCarouselClick.current=true;setHeroIndex(i=>(i+(delta<0?1:-1)+heroProducts.length)%heroProducts.length)}carouselDragStart.current=null}}}
     onPointerCancel={()=>{carouselDragStart.current=null}}
     onClickCapture={e=>{if(suppressCarouselClick.current){e.preventDefault();e.stopPropagation();suppressCarouselClick.current=false}}}
@@ -617,8 +590,8 @@ const generateAiDescription=async()=>{
   >
     <button className="hero-carousel-arrow prev" onClick={()=>setHeroIndex(i=>(i-1+heroProducts.length)%heroProducts.length)} aria-label="Попередній товар"><ChevronRight/></button>
     {heroProducts.map((p,i)=><article key={p.id} className={`hero-feature-card ${i===(heroIndex%heroProducts.length)?'active':''}`} aria-hidden={i!==(heroIndex%heroProducts.length)}>
-      <button className="hero-feature-image" onClick={()=>openProduct(p)} aria-label={`Відкрити товар ${p.title}`}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package size={54}/>}</button>
-      <div className="hero-feature-copy"><span className="eyebrow">{p.is_best_seller?'ХІТ ПРОДАЖІВ':p.is_editor_pick?'ВИБІР AMAZONSAN':p.is_recommended?'РЕКОМЕНДУЄМО':p.is_new?'ЩОЙНО ДОДАНО':'РЕКОМЕНДОВАНЕ'}</span><h2>{p.title}</h2><p>{p.description||'Переглянь характеристики та детальну інформацію про товар.'}</p><div className="hero-feature-bottom"><b>{money(p.price_uah)}</b><button className="btn primary" onClick={()=>openProduct(p)}>Детальніше <ChevronRight size={16}/></button></div></div>
+      <button type="button" className="hero-feature-image" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.preventDefault();e.stopPropagation();setSelectedImageIndex(0);openProduct(p)}} aria-label={`Відкрити товар ${p.title}`}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package size={54}/>}</button>
+      <div className="hero-feature-copy"><span className="eyebrow">{p.is_best_seller?'ХІТ ПРОДАЖІВ':p.is_editor_pick?'ВИБІР AMAZONSAN':p.is_recommended?'РЕКОМЕНДУЄМО':p.is_new?'ЩОЙНО ДОДАНО':'РЕКОМЕНДОВАНЕ'}</span><h2>{p.title}</h2><p>{p.description||'Переглянь характеристики та детальну інформацію про товар.'}</p><div className="hero-feature-bottom"><b>{money(p.price_uah)}</b><button type="button" className="btn primary hero-detail-button" onPointerDown={e=>e.stopPropagation()} onClick={e=>{e.preventDefault();e.stopPropagation();setSelectedImageIndex(0);openProduct(p)}}>Детальніше <ChevronRight size={16}/></button></div></div>
     </article>)}
     <button className="hero-carousel-arrow next" onClick={()=>setHeroIndex(i=>(i+1)%heroProducts.length)} aria-label="Наступний товар"><ChevronRight/></button>
     <div className="hero-carousel-dots">{heroProducts.map((p,i)=><button key={p.id} className={i===(heroIndex%heroProducts.length)?'active':''} onClick={()=>setHeroIndex(i)} aria-label={`Показати товар ${i+1}`}/>)}</div>
@@ -842,3 +815,4 @@ const generateAiDescription=async()=>{
  </div>
 }
 export default App
+
