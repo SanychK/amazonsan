@@ -1,5 +1,14 @@
 import React, {useEffect, useMemo, useState} from 'react'
-import {Search, Heart, UserRound, Menu, X, Bell, SlidersHorizontal, Plus, Pencil, Trash2, Upload, Download, LogOut, Settings, Sparkles, Package, ChevronRight, ExternalLink, ImagePlus, ShieldCheck, LayoutGrid, Clock3, Star, Mail, Lock, Eye, EyeOff, Check, Info} from 'lucide-react'
+import {
+ Search, Heart, UserRound, Menu, X, Bell, SlidersHorizontal,
+ Plus, Pencil, Trash2, Upload, Download, LogOut, Settings,
+ Sparkles, Package, ChevronRight, ExternalLink, ImagePlus,
+ ShieldCheck, LayoutGrid, Clock3, Star, Mail, Lock, Eye,
+ EyeOff, Check, Info,
+ Smartphone, House, Shirt, HeartPulse, Dumbbell, CarFront,
+ Baby, Puzzle, Wrench, PawPrint, BriefcaseBusiness, Coffee,
+ Music2, Sprout, Gem, Luggage, Store, Shapes
+} from 'lucide-react'
 import {categories, demoProducts} from './data'
 import {supabase, configured} from './supabase'
 
