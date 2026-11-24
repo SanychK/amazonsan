@@ -1,10 +1,35 @@
-import React, {useEffect, useMemo, useState} from 'react'
-import {Search, Heart, UserRound, Menu, X, Bell, SlidersHorizontal, Plus, Pencil, Trash2, Upload, Download, LogOut, Settings, Sparkles, Package, ChevronRight, ExternalLink, ImagePlus, ShieldCheck, LayoutGrid, Clock3, Star, Mail, Lock, Eye, EyeOff, Check, Info} from 'lucide-react'
+import React, {useEffect, useMemo, useRef, useState} from 'react'
+import {Search, Heart, UserRound, Menu, X, Bell, SlidersHorizontal, Plus, Pencil, Trash2, Upload, Download, LogOut, Settings, Sparkles, Package, ChevronRight, ExternalLink, ImagePlus, ShieldCheck, LayoutGrid, Clock3, Star, Mail, Lock, Eye, EyeOff, Check, Info, Smartphone, House, Shirt, HeartPulse, Dumbbell, CarFront, Baby, Puzzle, Wrench, PawPrint, BriefcaseBusiness, Coffee, Music2, Sprout, Gem, Luggage, Store, Shapes} from 'lucide-react'
 import {categories, demoProducts} from './data'
 import {supabase, configured} from './supabase'
 
 const money = n => n == null || n === '' ? '—' : new Intl.NumberFormat('uk-UA',{style:'currency',currency:'UAH',maximumFractionDigits:0}).format(Number(n))
 const emptyForm = {title:'',category:categories[0].name,subcategory:'',price_uah:'',original_price_uah:'',price_usd:'',description:'',image_url:'',amazon_url:'',sku:'',specs:'',is_new:true,is_popular:false,is_best_seller:false,is_recommended:false,is_exclusive:false,is_editor_pick:false,is_deal_of_day:false,stock_status:'in_stock',status:'published'}
+const categoryIcons = {
+  'Електроніка': Smartphone,
+  'Дім і кухня': House,
+  'Одяг і взуття': Shirt,
+  'Краса та догляд': Sparkles,
+  'Здоров’я': HeartPulse,
+  'Спорт і туризм': Dumbbell,
+  'Автотовари': CarFront,
+  'Дитячі товари': Baby,
+  'Іграшки та хобі': Puzzle,
+  'Інструменти': Wrench,
+  'Товари для тварин': PawPrint,
+  'Офіс і канцелярія': BriefcaseBusiness,
+  'Продукти та напої': Coffee,
+  'Музика': Music2,
+  'Сад і город': Sprout,
+  'Ювелірні вироби': Gem,
+  'Багаж і подорожі': Luggage,
+  'Товари для бізнесу': Store,
+  'Інше': Shapes
+}
+const CategoryIcon = ({name, size = 20}) => {
+  const Icon = categoryIcons[name] || Package
+  return <Icon size={size} strokeWidth={1.8} aria-hidden="true"/>
+}
 function App(){
  const [products,setProducts]=useState(demoProducts),[stockFilter,setStockFilter]=useState('all'),[session,setSession]=useState(null),[profile,setProfile]=useState(null)
  const [favorites,setFavorites]=useState([]),[query,setQuery]=useState(''),[category,setCategory]=useState('Усі категорії'),[subcategory,setSubcategory]=useState('Усі підкатегорії')
@@ -19,6 +44,11 @@ function App(){
 const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setShowPassword]=useState(false),[settingsOpen,setSettingsOpen]=useState(false),[siteIcon,setSiteIcon]=useState('/favicon.svg')
  const [inquiryOpen,setInquiryOpen]=useState(false),[inquiryForm,setInquiryForm]=useState({name:'',contact:'',message:''}),[inquiryBusy,setInquiryBusy]=useState(false),[inquiries,setInquiries]=useState([])
   const [unreadInquiries,setUnreadInquiries]=useState(0)
+  const [heroIndex,setHeroIndex]=useState(0)
+  const [searchFocused,setSearchFocused]=useState(false)
+  const [searchHistory,setSearchHistory]=useState(()=>{try{const value=JSON.parse(localStorage.getItem('amazonsan_search_history')||'[]');return Array.isArray(value)?value.filter(x=>typeof x==='string').slice(0,8):[]}catch{return []}})
+  const carouselDragStart=useRef(null)
+  const suppressCarouselClick=useRef(false)
  const [categoryFocus,setCategoryFocus]=useState(false),[onlyNew,setOnlyNew]=useState(false)
  const [expandedCategory,setExpandedCategory]=useState('')
  const [compare,setCompare]=useState([]),[recentlyViewed,setRecentlyViewed]=useState(()=>{try{return JSON.parse(localStorage.getItem('amazonsan_recent')||'[]')}catch{return []}}),[smartFinder,setSmartFinder]=useState(false),[finderBudget,setFinderBudget]=useState(''),[budgetCap,setBudgetCap]=useState(''),[finderNeed,setFinderNeed]=useState(''),[finderFeature,setFinderFeature]=useState(''),[featureSettings,setFeatureSettings]=useState(()=>{try{return {...{new:true,bestsellers:true,deals:true,recommendations:true,recent:true,smart:true},...JSON.parse(localStorage.getItem('amazonsan_sections')||'{}')}}catch{return {new:true,bestsellers:true,deals:true,recommendations:true,recent:true,smart:true}}})
@@ -128,6 +158,48 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    if(sort==='best')arr.sort((a,b)=>Number(!!b.is_best_seller)-Number(!!a.is_best_seller))
    return arr
  },[products,category,subcategory,onlyFav,onlyNew,favorites,query,sort,isAdmin,budgetCap,stockFilter])
+ const publishedProducts=useMemo(()=>products.filter(p=>p.status==='published'||isAdmin),[products,isAdmin])
+ const heroProducts=useMemo(()=>{
+   const featured=publishedProducts.filter(p=>p.is_recommended||p.is_best_seller||p.is_editor_pick||p.is_new)
+   const source=featured.length?featured:publishedProducts
+   return [...source].sort((a,b)=>{
+     const score=p=>Number(!!p.is_recommended)*3+Number(!!p.is_best_seller)*2+Number(!!p.is_editor_pick)
+     return score(b)-score(a)||new Date(b.created_at||0)-new Date(a.created_at||0)
+   }).slice(0,8)
+ },[publishedProducts])
+ const brandGroups=useMemo(()=>{
+   const grouped=new Map()
+   publishedProducts.forEach(p=>{
+     const brand=String(p.brand||'').trim()
+     if(brand)grouped.set(brand,[...(grouped.get(brand)||[]),p])
+   })
+   return [...grouped.entries()].sort((a,b)=>b[1].length-a[1].length).slice(0,8)
+ },[publishedProducts])
+ const runSearch=value=>{
+   const term=String(value||'').trim()
+   setQuery(term)
+   setCategory('Усі категорії')
+   setSubcategory('Усі підкатегорії')
+   setOnlyFav(false)
+   setOnlyNew(false)
+   setCategoryFocus(false)
+   setBudgetCap('')
+   setStockFilter('all')
+   setView('catalog')
+   setSearchFocused(false)
+   if(term)setSearchHistory(old=>{
+     const next=[term,...old.filter(item=>String(item).toLowerCase()!==term.toLowerCase())].slice(0,8)
+     localStorage.setItem('amazonsan_search_history',JSON.stringify(next))
+     return next
+   })
+ }
+ const searchSuggestions=useMemo(()=>{
+   const term=query.trim().toLocaleLowerCase('uk-UA')
+   if(!term)return searchHistory.slice(0,6).map(label=>({type:'Історія',label,action:()=>runSearch(label)}))
+   const productMatches=publishedProducts.filter(p=>[p.title,p.brand,p.model,p.sku,p.category,p.subcategory].filter(Boolean).some(value=>String(value).toLocaleLowerCase('uk-UA').includes(term))).slice(0,5).map(p=>({type:'Товар',label:p.title,action:()=>{setSearchFocused(false);openProduct(p)}}))
+   const categoryMatches=categories.filter(c=>c.name.toLocaleLowerCase('uk-UA').includes(term)||c.subs.some(s=>s.toLocaleLowerCase('uk-UA').includes(term))).slice(0,3).map(c=>({type:'Категорія',label:c.name,action:()=>{setSearchFocused(false);setQuery('');openHeroCategory(c.name)}}))
+   return [...productMatches,...categoryMatches]
+ },[query,searchHistory,publishedProducts])
  const openProduct=p=>{setSelectedImageIndex(0);setSelected(p);setRecentlyViewed(old=>{const next=[p.id,...old.filter(id=>id!==p.id)].slice(0,8);localStorage.setItem('amazonsan_recent',JSON.stringify(next));return next})}
  const toggleCompare=id=>setCompare(old=>old.includes(id)?old.filter(x=>x!==id):old.length<4?[...old,id]:(notify('Можна порівняти до 4 товарів.'),old))
  const toggleFeature=k=>setFeatureSettings(old=>{const next={...old,[k]:!old[k]};localStorage.setItem('amazonsan_sections',JSON.stringify(next));return next})
@@ -469,29 +541,29 @@ const generateAiDescription=async()=>{
   setCategoryFocus(false)
   window.scrollTo({top:0,behavior:'smooth'})
 }}><span className="brand-mark">a<span>•</span></span><span>amazonsan<small>КАТАЛОГ ТОВАРІВ</small></span></button>
-   <div className="searchbox"><Search size={19}/><input
-  value={query}
-  onChange={e=>{
-  setQuery(e.target.value)
-  setView('catalog')
-  setCategoryFocus(false)
-  setOnlyNew(false)
-  if(e.target.value.trim()){
-    setCategory('Усі категорії')
-    setSubcategory('Усі підкатегорії')
-    setOnlyFav(false)
-    setBudgetCap('')
-    setStockFilter('all')
-  }
-  }}
-  placeholder="Знайти товар, категорію або бренд..."
-/><kbd>⌕</kbd></div>
+   <div className="search-wrap">
+    <div className="searchbox"><Search size={19}/><input
+      value={query}
+      onFocus={()=>setSearchFocused(true)}
+      onBlur={()=>window.setTimeout(()=>setSearchFocused(false),160)}
+      onKeyDown={e=>{if(e.key==='Enter')runSearch(query);if(e.key==='Escape')setSearchFocused(false)}}
+      onChange={e=>{setQuery(e.target.value);setView('catalog');setCategoryFocus(false);setOnlyNew(false);if(e.target.value.trim()){setCategory('Усі категорії');setSubcategory('Усі підкатегорії');setOnlyFav(false);setBudgetCap('');setStockFilter('all')}}}
+      placeholder="Знайти товар, категорію або бренд..."
+      aria-label="Пошук товарів"
+    />
+      <button type="button" className="search-submit" onMouseDown={e=>e.preventDefault()} onClick={()=>runSearch(query)} aria-label="Шукати"><Search size={17}/></button>
+    </div>
+    {searchFocused&&(query.trim()||searchHistory.length>0)&&<div className="search-suggestions">
+      {query.trim()&&searchSuggestions.length===0?<p>Нічого не знайдено. Натисни Enter, щоб переглянути результати.</p>:searchSuggestions.map((item,i)=><button key={`${item.type}-${item.label}-${i}`} onMouseDown={e=>e.preventDefault()} onClick={item.action}><Search size={14}/><span>{item.label}</span><small>{item.type}</small></button>)}
+      {!query.trim()&&searchHistory.length>0&&<button className="clear-search-history" onMouseDown={e=>e.preventDefault()} onClick={()=>{setSearchHistory([]);localStorage.removeItem('amazonsan_search_history')}}>Очистити історію пошуку</button>}
+    </div>}
+   </div>
    <div className="top-actions"><button className={`icon-btn ${onlyFav?'active':''}`} onClick={()=>{setOnlyFav(!onlyFav);setOnlyNew(false);setCategoryFocus(false);setView('catalog')}} title="Обране"><Heart/><span className="count">{favorites.length}</span></button>{isAdmin&&<button className={`notification-btn ${unreadInquiries>0?'has-unread':''}`} onClick={openInquiries} title={unreadInquiries>0?`Нові звернення: ${unreadInquiries}`:'Сповіщення'} aria-label={unreadInquiries>0?`Нові звернення: ${unreadInquiries}`:'Сповіщення'}><Bell size={19}/>{unreadInquiries>0&&<span className="notification-count">{unreadInquiries>99?'99+':unreadInquiries}</span>}</button>}<button className="account-btn" onClick={()=>session?setView('account'):setAuthOpen(true)}><UserRound size={18}/><span>{session?'Мій акаунт':'Увійти'}</span></button></div>
   </div></header>
   <div className="layout">
    <aside className={`sidebar ${sidebar?'open':''}`}><div className="side-head"><span>КАТАЛОГ</span><button className="mobile-menu icon-btn" onClick={()=>setSidebar(false)}><X/></button></div>
     <button className={`cat-link ${category==='Усі категорії'?'selected':''}`} onClick={()=>openHeroCategory('Усі категорії')}><LayoutGrid size={17}/> Усі категорії</button>
-{categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>{setExpandedCategory(expandedCategory===c.name?'':c.name);openHeroCategory(c.name)}}><span className="cat-icon">{c.icon}</span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{expandedCategory===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>{setSubcategory(s);setCategoryFocus(true);setSidebar(false);window.scrollTo({top:0,behavior:'smooth'})}}>{s}</button>)}</div>}</div>)}
+{categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>{setExpandedCategory(expandedCategory===c.name?'':c.name);openHeroCategory(c.name)}}><span className="cat-icon"><CategoryIcon name={c.name} size={18}/></span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{expandedCategory===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>{setSubcategory(s);setCategoryFocus(true);setSidebar(false);window.scrollTo({top:0,behavior:'smooth'})}}>{s}</button>)}</div>}</div>)}
     <div className="sidebar-bottom"><div className="mini-note"><Sparkles size={16}/><b>Знаходь цікаве</b><p>Каталог корисних товарів з Amazon в одному місці.</p></div><span>© 2026 amazonsan</span></div>
    </aside>
    <main className={`main ${categoryFocus?'category-focus':''}`}>
@@ -530,7 +602,41 @@ const generateAiDescription=async()=>{
     <div className="hero-promo-decoration">✦</div>
   </aside>
 </div>
-     
+
+<section className="home-hero-carousel" aria-label="Рекомендовані товари AMAZONSAN">
+  <div className="home-hero-heading">
+    <div><span className="eyebrow">AMAZONSAN · ВІДКРИВАЙ НОВЕ</span><h1>Знайди те, що <em>потрібно саме зараз</em></h1><p>Добірка товарів із каталогу — переглядай, порівнюй і зберігай цікаве.</p></div>
+    <button className="btn secondary small" onClick={()=>{setCategory('Усі категорії');setOnlyFav(false);setOnlyNew(false);document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'})}}>Увесь каталог <ChevronRight size={16}/></button>
+  </div>
+  {heroProducts.length>0?<div className="hero-carousel-stage"
+    onPointerDown={e=>{carouselDragStart.current=e.clientX;suppressCarouselClick.current=false;e.currentTarget.setPointerCapture?.(e.pointerId)}}
+    onPointerUp={e=>{if(carouselDragStart.current!==null){const delta=e.clientX-carouselDragStart.current;if(Math.abs(delta)>45&&heroProducts.length>1){suppressCarouselClick.current=true;setHeroIndex(i=>(i+(delta<0?1:-1)+heroProducts.length)%heroProducts.length)}carouselDragStart.current=null}}}
+    onPointerCancel={()=>{carouselDragStart.current=null}}
+    onClickCapture={e=>{if(suppressCarouselClick.current){e.preventDefault();e.stopPropagation();suppressCarouselClick.current=false}}}
+    style={{touchAction:'pan-y',cursor:'grab'}}
+  >
+    <button className="hero-carousel-arrow prev" onClick={()=>setHeroIndex(i=>(i-1+heroProducts.length)%heroProducts.length)} aria-label="Попередній товар"><ChevronRight/></button>
+    {heroProducts.map((p,i)=><article key={p.id} className={`hero-feature-card ${i===(heroIndex%heroProducts.length)?'active':''}`} aria-hidden={i!==(heroIndex%heroProducts.length)}>
+      <button className="hero-feature-image" onClick={()=>openProduct(p)} aria-label={`Відкрити товар ${p.title}`}>{(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title}/>:<Package size={54}/>}</button>
+      <div className="hero-feature-copy"><span className="eyebrow">{p.is_best_seller?'ХІТ ПРОДАЖІВ':p.is_editor_pick?'ВИБІР AMAZONSAN':p.is_recommended?'РЕКОМЕНДУЄМО':p.is_new?'ЩОЙНО ДОДАНО':'РЕКОМЕНДОВАНЕ'}</span><h2>{p.title}</h2><p>{p.description||'Переглянь характеристики та детальну інформацію про товар.'}</p><div className="hero-feature-bottom"><b>{money(p.price_uah)}</b><button className="btn primary" onClick={()=>openProduct(p)}>Детальніше <ChevronRight size={16}/></button></div></div>
+    </article>)}
+    <button className="hero-carousel-arrow next" onClick={()=>setHeroIndex(i=>(i+1)%heroProducts.length)} aria-label="Наступний товар"><ChevronRight/></button>
+    <div className="hero-carousel-dots">{heroProducts.map((p,i)=><button key={p.id} className={i===(heroIndex%heroProducts.length)?'active':''} onClick={()=>setHeroIndex(i)} aria-label={`Показати товар ${i+1}`}/>)}</div>
+  </div>:<div className="hero-empty"><Package/><b>Каталог наповнюється</b><span>Нові товари з’являться тут після додавання.</span></div>}
+</section>
+
+<section className="home-section category-showcase">
+  <div className="section-head"><div><span className="eyebrow">ЗНАЙДИ СВІЙ НАПРЯМ</span><h2>Популярні категорії</h2><p>Обирай категорію та переходь до відповідних товарів</p></div></div>
+  <div className="category-tiles">
+    {categories.map(c=>{const count=publishedProducts.filter(p=>p.category===c.name).length;return <button key={c.name} className="category-tile" onClick={()=>openHeroCategory(c.name)}><span className="category-tile-icon"><CategoryIcon name={c.name} size={25}/></span><b>{c.name}</b><small>{count} {count===1?'товар':count>1&&count<5?'товари':'товарів'}</small><ChevronRight size={16}/></button>})}
+  </div>
+</section>
+
+{brandGroups.length>0&&<section className="home-section brand-section">
+  <div className="section-head"><div><span className="eyebrow">ВІДОМИЙ ВИБІР</span><h2>Популярні бренди</h2><p>Переглядай товари конкретного бренду</p></div></div>
+  <div className="brand-strip">{brandGroups.map(([brand,items])=><button key={brand} className="brand-tile" onClick={()=>runSearch(brand)}><b>{brand}</b><small>{items.length} {items.length===1?'товар':items.length>1&&items.length<5?'товари':'товарів'}</small></button>)}</div>
+</section>}
+
 {featureSettings.new&&products.some(p=>p.is_new&&(p.status==='published'||isAdmin))&&<section className="new-arrivals-section">
   <div className="section-head">
     <div>
@@ -579,7 +685,7 @@ const generateAiDescription=async()=>{
             </button>
           </div>
           <div className="product-info">
-            <span className="product-category">{p.category}</span>
+            <span className="product-category"><CategoryIcon name={p.category} size={13}/>{p.category}</span>
             <h3 onClick={() => openProduct(p)}>{p.title}</h3>
             <p>{p.description || 'Детальна інформація про товар незабаром.'}</p>
             <div className="product-bottom">
@@ -654,7 +760,7 @@ const generateAiDescription=async()=>{
             {p.is_new&&<span className="tag new">НОВИНКА</span>}{p.is_popular&&<span className="tag popular">ПОПУЛЯРНЕ</span>}{p.is_best_seller&&<span className="tag best">ХІТ ПРОДАЖІВ</span>}{p.is_editor_pick&&<span className="tag editorial">ВИБІР AMAZONSAN</span>}{p.is_exclusive&&<span className="tag exclusive">ЕКСКЛЮЗИВ</span>}{p.is_deal_of_day&&<span className="tag daydeal">ТОВАР ДНЯ</span>}{p.original_price_uah>p.price_uah&&<span className="tag sale">−{Math.round((1-p.price_uah/p.original_price_uah)*100)}%</span>}{p.stock_status==='out_of_stock'&&<span className="tag soldout">НЕМАЄ В НАЯВНОСТІ</span>}
             <button className={`fav-btn ${favorites.includes(p.id)?'liked':''}`} onClick={e=>{e.stopPropagation();toggleFavorite(p.id)}} title="В обране"><Heart size={16} fill={favorites.includes(p.id)?'currentColor':'none'}/></button>
           </div>
-          <div className="product-info"><span className="product-category">{p.category}{p.subcategory?` · ${p.subcategory}`:''}</span><h3 onClick={()=>openProduct(p)}>{p.title}</h3><p>{p.description||'Детальна інформація про товар незабаром.'}</p>
+          <div className="product-info"><span className="product-category"><CategoryIcon name={p.category} size={13}/>{p.category}{p.subcategory?` · ${p.subcategory}`:''}</span><h3 onClick={()=>openProduct(p)}>{p.title}</h3><p>{p.description||'Детальна інформація про товар незабаром.'}</p>
             <div className="product-bottom"><div>{p.original_price_uah>p.price_uah&&<del className="old-price">{money(p.original_price_uah)}</del>}<b>{money(p.price_uah)}</b>{p.price_usd!=null&&<small>${p.price_usd} на Amazon</small>}</div><button className="arrow-btn" onClick={()=>openProduct(p)} aria-label="Детальніше"><ChevronRight size={18}/></button></div>
             <button className={`compare-toggle ${compare.includes(p.id)?'selected':''}`} onClick={()=>toggleCompare(p.id)}>{compare.includes(p.id)?'✓ Додано до порівняння':'+ Порівняти'}</button>{isAdmin&&<div className="admin-inline"><button onClick={()=>deleteProduct(p.id)}><Trash2 size={13}/> Видалити</button><button onClick={()=>startEdit(p)}><Pencil size={13}/> Редагувати</button></div>}
           </div>
@@ -696,7 +802,7 @@ const generateAiDescription=async()=>{
             style={{'--menu-delay':`${i*25}ms`}}
             onClick={()=>openHeroCategory(c.name)}
           >
-            <span className="category-menu-icon">{c.icon}</span>
+            <span className="category-menu-icon"><CategoryIcon name={c.name} size={22}/></span>
             <span><b>{c.name}</b><small>{c.subs.length} підкатегорій</small></span>
             <ChevronRight/>
           </button>
@@ -725,8 +831,8 @@ const generateAiDescription=async()=>{
       ))}
     </div>
   }
-</div><div><span className="product-category">{selected.category} · {selected.subcategory}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="detail-price">{selected.original_price_uah>selected.price_uah&&<del className="old-price">{money(selected.original_price_uah)}</del>}{money(selected.price_uah)}{selected.price_usd&&<small>${selected.price_usd} на Amazon</small>}</div>{Array.isArray(selected.specs)&&selected.specs.length>0&&<ul className="spec-list">{selected.specs.map((s,index)=><li key={`${selected.id}-spec-${index}`}>{s}</li>)}</ul>}<div className="detail-actions"><button className="btn secondary" onClick={()=>toggleCompare(selected.id)}>Порівняти</button><button className="btn secondary" onClick={()=>toggleFavorite(selected.id)}><Heart size={17}/> Зберегти</button><button className="btn primary" onClick={()=>setInquiryOpen(true)}><Mail size={16}/> Зв’язатися з власником</button>{selected.amazon_url&&<a className="btn secondary" href={selected.amazon_url} target="_blank" rel="noreferrer">Джерело товару <ExternalLink size={16}/></a>}</div><p className="inquiry-note">Це інформаційний каталог. Надсилання звернення не є оформленням замовлення або оплатою.</p></div></div></div></div>}
-  {smartFinder&&<div className="overlay" onClick={()=>setSmartFinder(false)}><div className="modal auth-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">SMART FINDER</span><h2>Розумний підбір товару</h2></div><button className="icon-btn" onClick={()=>setSmartFinder(false)}><X/></button></div><label>Для чого шукаєш товар?<select value={finderNeed} onChange={e=>setFinderNeed(e.target.value)}><option value="">Будь-яке призначення</option>{categories.map(c=><option key={c.name} value={c.name}>{c.name}</option>)}</select></label><label>Бюджет до (грн)<input type="number" min="0" value={finderBudget} onChange={e=>setFinderBudget(e.target.value)} placeholder="Наприклад, 3000"/></label><label>Що найважливіше?<input value={finderFeature} onChange={e=>setFinderFeature(e.target.value)} placeholder="Наприклад, автономність, компактність"/></label><p className="muted">Підбір використовує наявні категорії, ціни та описи каталогу. Це базовий фільтр, не зовнішній AI-сервіс.</p><button className="btn primary full-btn" onClick={()=>{setCategory(finderNeed||'Усі категорії');setSubcategory('Усі підкатегорії');setQuery(finderFeature);setBudgetCap(finderBudget);setSort('priceUp');setOnlyFav(false);setOnlyNew(false);setCategoryFocus(false);setSmartFinder(false);setView('catalog');setTimeout(()=>document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'}),100)}}>Показати відповідні товари</button></div></div>}
+</div><div><span className="product-category"><CategoryIcon name={selected.category} size={13}/>{selected.category} · {selected.subcategory}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="detail-price">{selected.original_price_uah>selected.price_uah&&<del className="old-price">{money(selected.original_price_uah)}</del>}{money(selected.price_uah)}{selected.price_usd&&<small>${selected.price_usd} на Amazon</small>}</div>{Array.isArray(selected.specs)&&selected.specs.length>0&&<ul className="spec-list">{selected.specs.map((s,index)=><li key={`${selected.id}-spec-${index}`}>{s}</li>)}</ul>}<div className="detail-actions"><button className="btn secondary" onClick={()=>toggleCompare(selected.id)}>Порівняти</button><button className="btn secondary" onClick={()=>toggleFavorite(selected.id)}><Heart size={17}/> Зберегти</button><button className="btn primary" onClick={()=>setInquiryOpen(true)}><Mail size={16}/> Зв’язатися з власником</button>{selected.amazon_url&&<a className="btn secondary" href={selected.amazon_url} target="_blank" rel="noreferrer">Джерело товару <ExternalLink size={16}/></a>}</div><p className="inquiry-note">Це інформаційний каталог. Надсилання звернення не є оформленням замовлення або оплатою.</p></div></div></div></div>}
+  {smartFinder&&<div className="overlay" onClick={()=>setSmartFinder(false)}><div className="modal auth-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">SMART FINDER</span><h2>Розумний підбір товару</h2></div><button className="icon-btn" onClick={()=>setSmartFinder(false)}><X/></button></div><label>Для чого шукаєш товар?<select value={finderNeed} onChange={e=>setFinderNeed(e.target.value)}><option value="">Будь-яке призначення</option>{categories.map(c=><option value={c.name}>{c.name}</option>)}</select></label><label>Бюджет до (грн)<input type="number" min="0" value={finderBudget} onChange={e=>setFinderBudget(e.target.value)} placeholder="Наприклад, 3000"/></label><label>Що найважливіше?<input value={finderFeature} onChange={e=>setFinderFeature(e.target.value)} placeholder="Наприклад, автономність, компактність"/></label><p className="muted">Підбір використовує наявні категорії, ціни та описи каталогу. Це базовий фільтр, не зовнішній AI-сервіс.</p><button className="btn primary full-btn" onClick={()=>{setCategory(finderNeed||'Усі категорії');setSubcategory('Усі підкатегорії');setQuery(finderFeature);setBudgetCap(finderBudget);setSort('priceUp');setOnlyFav(false);setOnlyNew(false);setCategoryFocus(false);setSmartFinder(false);setView('catalog');setTimeout(()=>document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'}),100)}}>Показати відповідні товари</button></div></div>}
   {inquiryOpen&&selected&&<div className="overlay" onClick={()=>setInquiryOpen(false)}><div className="modal auth-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">ЗВЕРНЕННЯ ДО ВЛАСНИКА</span><h2>Зацікавив товар?</h2></div><button className="icon-btn" onClick={()=>setInquiryOpen(false)}><X/></button></div><p><b>{selected.title}</b><br/><span className="muted">{money(selected.price_uah)} · ціна для ознайомлення на момент звернення</span></p><label>Ваше ім’я<input value={inquiryForm.name} onChange={e=>setInquiryForm(f=>({...f,name:e.target.value}))} maxLength={100} placeholder="Як до вас звертатися"/></label><label>Телефон або email для зв’язку<input value={inquiryForm.contact} onChange={e=>setInquiryForm(f=>({...f,contact:e.target.value}))} maxLength={180} placeholder="Номер телефону або email"/></label><label>Повідомлення (необов’язково)<textarea rows="3" value={inquiryForm.message} onChange={e=>setInquiryForm(f=>({...f,message:e.target.value}))} maxLength={1000} placeholder="Ваше запитання щодо товару"/></label><p className="inquiry-note">Надсилаючи звернення, ви погоджуєтеся, що власник каталогу використає ці контактні дані лише для відповіді на ваш запит. Звернення не є замовленням і не передбачає оплату на сайті.</p><button className="btn primary full-btn" disabled={inquiryBusy} onClick={sendInquiry}>{inquiryBusy?'Надсилання…':'Надіслати звернення'}</button></div></div>}
   {authOpen&&<div className="overlay" onClick={()=>setAuthOpen(false)}><div className="modal auth-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">AMAZONSAN ACCOUNT</span><h2>{authMode==='login'?'Вхід в акаунт':'Створити акаунт'}</h2></div><button className="icon-btn" onClick={()=>setAuthOpen(false)}><X/></button></div><label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@email.com"/></label><label>Пароль<div className="password-field"><input type={showPassword?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Не менше 6 символів"/><button onClick={()=>setShowPassword(!showPassword)}>{showPassword?<EyeOff/>:<Eye/>}</button></div></label>{authError&&<p className="error">{authError}</p>}<button className="btn primary full-btn" onClick={signIn}>{authMode==='login'?'Увійти':'Зареєструватися'}</button><button className="btn google-btn full-btn" onClick={googleLogin}>G　 Продовжити з Google</button><p className="switch-auth">{authMode==='login'?'Ще не маєш акаунта?':'Вже маєш акаунт?'} <button onClick={()=>setAuthMode(authMode==='login'?'signup':'login')}>{authMode==='login'?'Реєстрація':'Увійти'}</button></p></div></div>}
   {adminOpen&&<div className="overlay" onClick={()=>setAdminOpen(false)}>{adminForm}</div>}
