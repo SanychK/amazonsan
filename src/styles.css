@@ -2720,3 +2720,301 @@ footer{color:#7188ad}footer .footer-brand{color:#e9f3ff}footer button{color:#9aa
 .notification-btn{color:#a7bbda}.notification-btn:hover{color:#83eaff}
 @media(max-width:760px){.topbar{height:auto;min-height:68px}.top-inner{background:transparent}.layout{padding-top:16px}.sidebar{background:linear-gradient(160deg,#172844,#0b172a)}.catalog-section,.account-page{padding:17px}.product-card{border-radius:13px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* AMAZONSAN — Premium Future Digital polish: lighter, tactile, lively */
+:root{
+  --fd-bg:#111a2d;
+  --fd-panel:#1a2943;
+  --fd-panel-2:#203452;
+  --fd-panel-3:#294365;
+  --fd-line:rgba(164,190,235,.22);
+  --fd-text:#f1f6ff;
+  --fd-muted:#a8bad8;
+  --fd-cyan:#83eaff;
+  --fd-violet:#aaa0ff;
+  --fd-green:#77e8c6;
+  color-scheme:dark;
+  background:#111a2d;
+}
+html{background:#111a2d}
+body{
+  background:
+    radial-gradient(ellipse at 12% 3%,rgba(67,124,196,.29),transparent 36%),
+    radial-gradient(ellipse at 88% 17%,rgba(129,99,207,.22),transparent 33%),
+    radial-gradient(ellipse at 48% 85%,rgba(41,126,158,.10),transparent 42%),
+    linear-gradient(180deg,#121e33 0%,#151f34 48%,#101a2d 100%);
+}
+body::before{opacity:.28;background-size:52px 52px}
+::selection{background:rgba(113,190,255,.32);color:#fff}
+
+/* Glass navigation and controls */
+.topbar{background:rgba(17,29,49,.91);border-color:rgba(164,190,235,.2);box-shadow:0 10px 34px rgba(3,9,22,.24)}
+.brand-mark{background:linear-gradient(145deg,#315887,#293765);box-shadow:0 5px 22px rgba(78,170,231,.22),inset 0 1px rgba(255,255,255,.16)}
+.searchbox{background:linear-gradient(115deg,rgba(35,55,84,.96),rgba(27,43,68,.96));border-color:rgba(164,190,235,.23);box-shadow:inset 0 1px rgba(255,255,255,.06),0 5px 18px rgba(2,8,20,.12)}
+.searchbox:focus-within{border-color:rgba(131,234,255,.72);box-shadow:0 0 0 3px rgba(99,199,241,.12),0 8px 24px rgba(4,11,25,.2)}
+.account-btn{background:linear-gradient(135deg,#2b4265,#243552);box-shadow:inset 0 1px rgba(255,255,255,.08),0 5px 15px rgba(3,8,19,.14)}
+.icon-btn,.notification-btn,.account-btn,.search-submit,.btn,.filter-btn,.fav-btn,.arrow-btn{transition:transform .22s ease,background .22s ease,border-color .22s ease,box-shadow .22s ease,color .22s ease,filter .22s ease}
+.top-actions .icon-btn:hover,.notification-btn:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(83,173,229,.13)}
+.account-btn:hover{transform:translateY(-2px);box-shadow:0 9px 22px rgba(83,173,229,.16)}
+
+/* Richer, softly illuminated page surfaces */
+.sidebar{background:linear-gradient(155deg,rgba(31,49,77,.97),rgba(21,35,58,.98));border-color:rgba(164,190,235,.2);box-shadow:0 18px 45px rgba(2,8,20,.23),inset 0 1px rgba(255,255,255,.045)}
+.catalog-section,.account-page,.admin-bar,.quick-stats>div,.empty,.comparison-section,.product-detail-section{
+  background:linear-gradient(150deg,rgba(31,48,75,.97),rgba(22,36,59,.98));
+  border-color:rgba(164,190,235,.21);
+  box-shadow:0 16px 40px rgba(2,8,20,.2),inset 0 1px rgba(255,255,255,.045);
+}
+.home-hero-carousel,.home-section{background:linear-gradient(145deg,rgba(32,52,82,.98),rgba(22,37,62,.98));border-color:rgba(164,190,235,.23);box-shadow:0 18px 46px rgba(2,8,20,.22),inset 0 1px rgba(255,255,255,.055)}
+.hero-carousel-stage{background:radial-gradient(ellipse at 23% 38%,#355985 0%,#263f65 42%,#1b2e4c 100%);border-color:rgba(169,207,255,.24);box-shadow:inset 0 1px rgba(255,255,255,.08)}
+.hero-feature-image{background:radial-gradient(ellipse at 50% 40%,#3a5c85,#203654 75%);box-shadow:inset 0 1px rgba(255,255,255,.08)}
+.hero-carousel-arrow{background:linear-gradient(145deg,#34547c,#263d60);box-shadow:0 6px 18px rgba(2,8,20,.2),inset 0 1px rgba(255,255,255,.1)}
+.hero-carousel-arrow:hover{transform:scale(1.08);background:linear-gradient(145deg,#426b98,#304d75)}
+.hero-carousel-dots button{transition:width .25s ease,background .25s ease,box-shadow .25s ease}
+.hero-carousel-dots button.active{box-shadow:0 0 12px rgba(131,234,255,.55)}
+
+/* Product cards: depth, realistic surfaces and clear hover feedback */
+.product-card,.home-mini-product{
+  background:linear-gradient(155deg,#263d5d 0%,#1e324f 58%,#1a2b46 100%);
+  border-color:rgba(164,190,235,.2);
+  box-shadow:0 9px 25px rgba(2,8,20,.17),inset 0 1px rgba(255,255,255,.055);
+  transition:transform .24s cubic-bezier(.2,.75,.25,1),box-shadow .24s ease,border-color .24s ease,background .24s ease;
+}
+.product-card:hover,.home-mini-product:hover{transform:translateY(-5px);border-color:rgba(131,234,255,.56);box-shadow:0 18px 38px rgba(2,8,20,.28),0 0 25px rgba(83,184,235,.1),inset 0 1px rgba(255,255,255,.08)}
+.product-image,.detail-image,.home-mini-image{background:radial-gradient(ellipse at 50% 32%,#3b5b80 0%,#263e60 52%,#1c304d 100%);border:1px solid rgba(164,190,235,.12)}
+.product-image img,.detail-image img,.home-mini-image img{transition:transform .35s cubic-bezier(.2,.75,.25,1),filter .35s ease}
+.product-card:hover .product-image img,.home-mini-product:hover .home-mini-image img{transform:scale(1.045);filter:drop-shadow(0 9px 13px rgba(0,0,0,.2))}
+.product-info h3,.home-mini-product>b{color:#f2f7ff}
+.product-bottom b,.home-mini-product>strong,.detail-price{color:#91edff}
+.fav-btn{box-shadow:0 4px 14px rgba(2,8,20,.2)}
+.fav-btn:hover,.arrow-btn:hover{transform:scale(1.08)}
+
+/* Categories, brands, labels and section actions */
+.category-tile,.brand-tile{
+  background:linear-gradient(145deg,#2b4569,#203653 72%,#1d304d);
+  border-color:rgba(164,190,235,.2);
+  box-shadow:0 7px 20px rgba(2,8,20,.14),inset 0 1px rgba(255,255,255,.055);
+  transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease,filter .22s ease;
+}
+.category-tile:hover,.brand-tile:hover{transform:translateY(-4px);border-color:rgba(131,234,255,.56);box-shadow:0 14px 28px rgba(2,8,20,.23),0 0 20px rgba(83,184,235,.09);filter:brightness(1.07)}
+.category-tile-icon{background:linear-gradient(145deg,#426b98,#344f7b);box-shadow:inset 0 1px rgba(255,255,255,.12)}
+.sale-pill{box-shadow:0 4px 12px rgba(0,0,0,.18)}
+
+/* Buttons, filters, forms and accessible focus states */
+.btn.primary{background:linear-gradient(110deg,#607ce9 0%,#8874e8 56%,#3c9fc8 100%);box-shadow:0 8px 22px rgba(89,117,224,.3),inset 0 1px rgba(255,255,255,.2)}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 12px 27px rgba(89,117,224,.38),inset 0 1px rgba(255,255,255,.24);filter:brightness(1.08)}
+.btn.secondary,.filter-btn,.filters select{background:linear-gradient(145deg,#304b70,#263e60);border-color:rgba(164,190,235,.23);box-shadow:inset 0 1px rgba(255,255,255,.055)}
+.btn.secondary:hover,.filter-btn:hover{transform:translateY(-1px);border-color:rgba(131,234,255,.48);filter:brightness(1.1)}
+input,select,textarea{accent-color:#81dff4}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid rgba(131,234,255,.82);outline-offset:3px}
+
+/* Dialogs and dropdowns */
+.modal{background:linear-gradient(150deg,#2a4264,#1b2d49);border-color:rgba(175,204,246,.27);box-shadow:0 30px 90px rgba(0,0,0,.5),inset 0 1px rgba(255,255,255,.07)}
+.modal input,.modal select,.modal textarea{background:linear-gradient(145deg,#1b2d48,#17263e);border-color:rgba(164,190,235,.23)}
+.search-suggestions{background:linear-gradient(150deg,#263e60,#1b2e49);border-color:rgba(164,190,235,.24);box-shadow:0 20px 48px rgba(0,0,0,.34)}
+.account-card,.home-info-strip>div{background:linear-gradient(145deg,rgba(43,66,99,.82),rgba(30,48,75,.9));border-color:rgba(164,190,235,.2);box-shadow:inset 0 1px rgba(255,255,255,.055)}
+
+/* Small ambient motion — restrained, not distracting */
+@keyframes fdSoftGlow{0%,100%{box-shadow:0 0 0 rgba(105,206,244,0)}50%{box-shadow:0 0 22px rgba(105,206,244,.08)}}
+.home-hero-carousel{animation:fdSoftGlow 8s ease-in-out infinite}
+@media(hover:hover){.cat-link,.subcats button{transition:background .2s ease,color .2s ease,transform .2s ease}.cat-link:hover,.subcats button:hover{transform:translateX(2px)}}
+@media(prefers-reduced-motion:reduce){.home-hero-carousel{animation:none}*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* AMAZONSAN — final responsive image and mobile navigation correction */
+.product-image img,
+.future-product .product-image img,
+.hero-feature-image img,
+.home-mini-image img {
+  object-fit: contain !important;
+  object-position: center center !important;
+  max-width: 100%;
+  max-height: 100%;
+  transform: none !important;
+}
+
+.product-card:hover .product-image img,
+.future-product:hover .product-image img,
+.hero-feature-image:hover img,
+.home-mini-product:hover .home-mini-image img {
+  transform: none !important;
+  filter: none !important;
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .top-inner {
+    display: grid !important;
+    grid-template-columns: 38px minmax(0, 1fr) auto !important;
+    grid-template-rows: 42px 40px !important;
+    align-items: center !important;
+    column-gap: 7px !important;
+    row-gap: 8px !important;
+    padding: 9px 12px !important;
+    width: 100%;
+  }
+
+  .top-inner > .mobile-menu {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    flex: 0 0 36px !important;
+    justify-self: start !important;
+  }
+
+  .top-inner > .brand {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    justify-self: start !important;
+    min-width: 0 !important;
+    max-width: 100%;
+    padding: 0 !important;
+    gap: 5px !important;
+    font-size: 14px !important;
+    white-space: nowrap;
+  }
+
+  .top-inner > .brand .brand-mark {
+    width: 31px !important;
+    min-width: 31px !important;
+    height: 31px !important;
+    font-size: 21px !important;
+  }
+
+  .top-inner > .brand small {
+    font-size: 6px !important;
+    letter-spacing: 1px !important;
+  }
+
+  .top-inner > .search-wrap {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  .top-inner > .search-wrap .searchbox {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: 40px !important;
+  }
+
+  .top-inner > .top-actions {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-self: end !important;
+    justify-content: flex-end !important;
+    gap: 3px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  .top-inner > .top-actions > .icon-btn,
+  .top-inner > .top-actions > .notification-btn {
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 34px !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .top-inner > .top-actions > .account-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 104px !important;
+    height: 34px !important;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+  }
+
+  .top-inner > .top-actions > .account-btn span {
+    display: inline !important;
+    font-size: 10px !important;
+  }
+
+  .top-inner > .top-actions svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 360px) {
+  .top-inner {
+    grid-template-columns: 34px minmax(0, 1fr) auto !important;
+    column-gap: 4px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .top-inner > .mobile-menu {
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    flex-basis: 32px !important;
+  }
+
+  .top-inner > .brand {
+    font-size: 12px !important;
+    gap: 4px !important;
+  }
+
+  .top-inner > .brand .brand-mark {
+    width: 27px !important;
+    min-width: 27px !important;
+    height: 27px !important;
+    font-size: 18px !important;
+  }
+
+  .top-inner > .top-actions {
+    gap: 1px !important;
+  }
+
+  .top-inner > .top-actions > .icon-btn,
+  .top-inner > .top-actions > .notification-btn {
+    flex-basis: 31px !important;
+    width: 31px !important;
+    min-width: 31px !important;
+    max-width: 31px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+  }
+
+  .top-inner > .top-actions > .account-btn {
+    max-width: 84px !important;
+    padding: 0 6px !important;
+  }
+
+  .top-inner > .top-actions > .account-btn span {
+    font-size: 9px !important;
+  }
+}
