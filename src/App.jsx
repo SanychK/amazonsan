@@ -4,7 +4,7 @@ import {categories, demoProducts} from './data'
 import {supabase, configured} from './supabase'
 
 const money = n => n == null || n === '' ? '—' : new Intl.NumberFormat('uk-UA',{style:'currency',currency:'UAH',maximumFractionDigits:0}).format(Number(n))
-const emptyForm = {title:'',category:categories[0].name,subcategory:'',price_uah:'',original_price_uah:'',price_usd:'',description:'',image_url:'',amazon_url:'',sku:'',specs:'',is_new:true,is_popular:false,is_best_seller:false,is_recommended:false,is_exclusive:false,is_editor_pick:false,is_deal_of_day:false,stock_status:'in_stock',status:'published'}
+const emptyForm = {title:'',brand:'',model:'',category:categories[0].name,subcategory:'',price_uah:'',original_price_uah:'',price_usd:'',description:'',image_url:'',amazon_url:'',sku:'',specs:'',is_new:true,is_popular:false,is_best_seller:false,is_recommended:false,is_exclusive:false,is_editor_pick:false,is_deal_of_day:false,stock_status:'in_stock',status:'published'}
 const categoryIcons = {
   'Електроніка': Smartphone,
   'Дім і кухня': House,
@@ -536,7 +536,8 @@ const generateAiDescription=async()=>{
     ))}
   </div>
     <label className="full">Посилання на товар Amazon<input value={form.amazon_url||''} onChange={e=>setField('amazon_url',e.target.value)} placeholder="https://www.amazon.com/..."/></label>
-    <label className="full">Модель товару (для AI)<input value={aiModel} onChange={e=>setAiModel(e.target.value)} placeholder="Наприклад, WH-1000XM5"/></label>
+    <label>Бренд<input value={form.brand||''} onChange={e=>setField('brand',e.target.value)} placeholder="Наприклад, Sony"/></label>
+<label>Модель товару<input value={form.model||''} onChange={e=>{setField('model',e.target.value);setAiModel(e.target.value)}} placeholder="Наприклад, WH-1000XM5"/></label>
 
 <label className="full">Призначення товару (для AI)<textarea rows="2" value={aiPurpose} onChange={e=>setAiPurpose(e.target.value)} placeholder="Для чого призначений товар і кому буде корисний"/></label>
 
@@ -767,7 +768,7 @@ const generateAiDescription=async()=>{
           </div>
           <div className="product-info"><span className="product-category"><CategoryIcon name={p.category} size={13}/>{p.category}{p.subcategory?` · ${p.subcategory}`:''}</span><h3 onClick={()=>openProduct(p)}>{p.title}</h3><p>{p.description||'Детальна інформація про товар незабаром.'}</p>
             <div className="product-bottom"><div>{p.original_price_uah>p.price_uah&&<del className="old-price">{money(p.original_price_uah)}</del>}<b>{money(p.price_uah)}</b>{p.price_usd!=null&&<small>${p.price_usd} на Amazon</small>}</div><button className="arrow-btn" onClick={()=>openProduct(p)} aria-label="Детальніше"><ChevronRight size={18}/></button></div>
-            <button className={`compare-toggle ${compare.includes(p.id)?'selected':''}`} onClick={()=>toggleCompare(p.id)}>{compare.includes(p.id)?'✓ Додано до порівняння':'+ Порівняти'}</button>{isAdmin&&<div className="admin-inline"><button onClick={()=>deleteProduct(p.id)}><Trash2 size={13}/> Видалити</button><button onClick={()=>startEdit(p)}><Pencil size={13}/> Редагувати</button></div>}
+            <button className={`compare-toggle ${compare.includes(p.id)?'selected':''}`} onClick={()=>toggleCompare(p.id)}>{compare.includes(p.id)?'✓ Додано до порівняння':'+ Порівняти'}</button>{isAdmin&&<div className="admin-inline"><button onClick={()=>deleteProduct(p.id)}><Trash2 size={13}/> Видалити</button><button onClick={()=>setAiModel(p.model||'')(p)}><Pencil size={13}/> Редагувати</button></div>}
           </div>
         </article>)}</div> : <div className="empty"><div className="empty-icon"><Package/></div><h3>Поки що нічого не знайдено</h3><p>Спробуй змінити пошуковий запит або вибрати іншу категорію.</p><button className="btn primary" onClick={()=>{setQuery('');setCategory('Усі категорії');setSubcategory('Усі підкатегорії');setOnlyFav(false);setOnlyNew(false);setCategoryFocus(false);setBudgetCap('');setStockFilter('all')}}>Показати всі товари</button></div>}
       </section>
