@@ -142,13 +142,17 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    if(stockFilter!=='all')arr=arr.filter(p=>(p.stock_status||'in_stock')===stockFilter)
    if(onlyFav)arr=arr.filter(p=>favorites.includes(p.id))
    if(query.trim()){
-  const words=query.toLowerCase().trim().split(/\s+/).filter(Boolean)
+  const normalize=value=>String(value||'').toLocaleLowerCase('uk-UA').normalize('NFC')
+    .replace(/[’'`]/g,'')
+    .replace(/[^\p{L}\p{N}]+/gu,' ')
+    .trim()
+  const words=normalize(query).split(/\s+/).filter(Boolean)
   arr=arr.filter(p=>{
-    const text=[p.title,p.brand,p.description,p.category,p.subcategory,p.sku]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-    return words.every(word=>text.includes(word))
+    const text=normalize([p.title,p.brand,p.model,p.description,p.category,p.subcategory,p.sku]
+      .filter(Boolean).join(' '))
+    const tokens=text.split(/\s+/).filter(Boolean)
+    // Шукаємо ціле слово, а не довільний фрагмент іншого слова.
+    return words.every(word=>tokens.some(token=>token===word))
   })
 }
    if(sort==='priceUp')arr.sort((a,b)=>(a.price_uah||0)-(b.price_uah||0))
@@ -171,7 +175,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    if(view!=='catalog'||query.trim()||categoryFocus||heroProducts.length<2)return
    const timer=window.setInterval(()=>{
      if(document.visibilityState==='visible')setHeroIndex(index=>(index+1)%heroProducts.length)
-   },6500)
+   },4000)
    return ()=>window.clearInterval(timer)
  },[view,query,categoryFocus,heroProducts.length])
  const brandGroups=useMemo(()=>{
@@ -203,7 +207,8 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
  const searchSuggestions=useMemo(()=>{
    const term=query.trim().toLocaleLowerCase('uk-UA')
    if(!term)return searchHistory.slice(0,6).map(label=>({type:'Історія',label,action:()=>runSearch(label)}))
-   const productMatches=publishedProducts.filter(p=>[p.title,p.brand,p.model,p.sku,p.category,p.subcategory].filter(Boolean).some(value=>String(value).toLocaleLowerCase('uk-UA').includes(term))).slice(0,5).map(p=>({type:'Товар',label:p.title,action:()=>{setSearchFocused(false);openProduct(p)}}))
+   const normalizedTerm=term.normalize('NFC').replace(/[’'`]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(/\s+/).filter(Boolean)
+   const productMatches=publishedProducts.filter(p=>{const tokens=[p.title,p.brand,p.model,p.sku,p.category,p.subcategory,p.description].filter(Boolean).join(' ').toLocaleLowerCase('uk-UA').normalize('NFC').replace(/[’'`]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(/\s+/);return normalizedTerm.every(word=>tokens.includes(word))}).slice(0,5).map(p=>({type:'Товар',label:p.title,action:()=>{setSearchFocused(false);openProduct(p)}}))
    const categoryMatches=categories.filter(c=>c.name.toLocaleLowerCase('uk-UA').includes(term)||c.subs.some(s=>s.toLocaleLowerCase('uk-UA').includes(term))).slice(0,3).map(c=>({type:'Категорія',label:c.name,action:()=>{setSearchFocused(false);setQuery('');openHeroCategory(c.name)}}))
    return [...productMatches,...categoryMatches]
  },[query,searchHistory,publishedProducts])
@@ -605,10 +610,7 @@ const generateAiDescription=async()=>{
   </div>
 </section>
 
-{brandGroups.length>0&&<section className="home-section brand-section">
-  <div className="section-head"><div><span className="eyebrow">ВІДОМИЙ ВИБІР</span><h2>Популярні бренди</h2><p>Переглядай товари конкретного бренду</p></div></div>
-  <div className="brand-strip">{brandGroups.map(([brand,items])=><button key={brand} className="brand-tile" onClick={()=>runSearch(brand)}><b>{brand}</b><small>{items.length} {items.length===1?'товар':items.length>1&&items.length<5?'товари':'товарів'}</small></button>)}</div>
-</section>}
+
 
 {featureSettings.new&&products.some(p=>p.is_new&&(p.status==='published'||isAdmin))&&<section className="new-arrivals-section">
   <div className="section-head">
@@ -683,6 +685,11 @@ const generateAiDescription=async()=>{
   </div>
 </section>}
 
+{brandGroups.length>0&&<section className="home-section brand-section">
+  <div className="section-head"><div><span className="eyebrow">ВІДОМИЙ ВИБІР</span><h2>Популярні бренди</h2><p>Переглядай товари конкретного бренду</p></div></div>
+  <div className="brand-strip">{brandGroups.map(([brand,items])=><button key={brand} className="brand-tile" onClick={()=>runSearch(brand)}><b>{brand}</b><small>{items.length} {items.length===1?'товар':items.length>1&&items.length<5?'товари':'товарів'}</small></button>)}</div>
+</section>}
+
       <div className="future-stats">
         <div><span>КАТАЛОГ</span><strong>{products.length.toLocaleString('uk-UA')}</strong><small>товарів у базі</small></div>
         <div><span>КАТЕГОРІЇ</span><strong>{categories.length}</strong><small>напрямів покупок</small></div>
@@ -711,7 +718,7 @@ const generateAiDescription=async()=>{
 </button>
         <button className="engage-chip" onClick={()=>{setOnlyFav(true);setOnlyNew(false);setCategoryFocus(false);setView('catalog')}}><Heart size={16}/> Список бажань</button>
       </section>
-      {featureSettings.new&&products.some(p=>p.is_new&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ЩОЙНО ДОДАНО</span><h2>Новинки тижня</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_new).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
+      {/* Повторну смугу новинок прибрано: повна добірка розміщена вище. */}
       {featureSettings.recommendations&&products.some(p=>p.is_recommended&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ДОБІРКА AMAZONSAN</span><h2>Рекомендуємо</h2><p>Редакційна добірка власника каталогу</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_recommended).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
       {featureSettings.bestsellers&&products.some(p=>p.is_best_seller&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОБИРАЮТЬ ЧАСТІШЕ</span><h2>Хіти продажів</h2><p>Товари, які власник каталогу позначив як найпопулярніші</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_best_seller).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
       {products.some(p=>p.status==='published'&&p.is_editor_pick)&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОСОБЛИВА ДОБІРКА</span><h2>Вибір AMAZONSAN</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_editor_pick).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
@@ -815,4 +822,3 @@ const generateAiDescription=async()=>{
  </div>
 }
 export default App
-
