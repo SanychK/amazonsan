@@ -292,7 +292,7 @@ const [heroPaused,setHeroPaused]=useState(false)
     :p.image_url?[p.image_url]:[]
 
   setEditing(p.id)
-  setAiModel('')
+  setAiModel(p.model||'')
   setAiPurpose('')
   setAiError('')
   setForm({
