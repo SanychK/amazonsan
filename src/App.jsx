@@ -444,10 +444,15 @@ const generateAiDescription=async()=>{
  const currentSubs=categories.find(c=>c.name===category)?.subs||[]
  const openHeroCategory = name => {
   setCategory(name)
-  setCategoryFocus(name !== 'Усі категорії')
+  // Усі категорії також відкривають каталог одразу під шапкою.
+  setCategoryFocus(true)
   setSubcategory('Усі підкатегорії')
   setOnlyFav(false)
   setOnlyNew(false)
+  setQuery('')
+  setBudgetCap('')
+  setStockFilter('all')
+  setSort('new')
   setView('catalog')
   setSelected(null)
   setSidebar(false)
