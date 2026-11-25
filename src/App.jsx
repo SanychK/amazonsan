@@ -45,6 +45,7 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
  const [inquiryOpen,setInquiryOpen]=useState(false),[inquiryForm,setInquiryForm]=useState({name:'',contact:'',message:''}),[inquiryBusy,setInquiryBusy]=useState(false),[inquiries,setInquiries]=useState([])
   const [unreadInquiries,setUnreadInquiries]=useState(0)
   const [heroIndex,setHeroIndex]=useState(0)
+const [heroPaused,setHeroPaused]=useState(false)
   const [searchFocused,setSearchFocused]=useState(false)
   const [searchHistory,setSearchHistory]=useState(()=>{try{const value=JSON.parse(localStorage.getItem('amazonsan_search_history')||'[]');return Array.isArray(value)?value.filter(x=>typeof x==='string').slice(0,8):[]}catch{return []}})
   const carouselDragStart=useRef(null)
@@ -172,12 +173,13 @@ const [categoryMenuOpen,setCategoryMenuOpen]=useState(false),[showPassword,setSh
    }).slice(0,8)
  },[publishedProducts])
  useEffect(()=>{
-   if(view!=='catalog'||query.trim()||categoryFocus||heroProducts.length<2)return
+   [view,query,categoryFocus,heroProducts.length,heroPaused]
+   if(view!=='catalog'||query.trim()||categoryFocus||heroProducts.length<2||heroPaused)return
    const timer=window.setInterval(()=>{
      if(document.visibilityState==='visible')setHeroIndex(index=>(index+1)%heroProducts.length)
    },4000)
    return ()=>window.clearInterval(timer)
- },[view,query,categoryFocus,heroProducts.length])
+ },[view,query,categoryFocus,heroProducts.length,heroPaused])
  const brandGroups=useMemo(()=>{
    const grouped=new Map()
    publishedProducts.forEach(p=>{
@@ -592,9 +594,31 @@ const generateAiDescription=async()=>{
     <button className="btn secondary small" onClick={()=>{setCategory('Усі категорії');setOnlyFav(false);setOnlyNew(false);document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'})}}>Увесь каталог <ChevronRight size={16}/></button>
   </div>
   {heroProducts.length>0?<div className="hero-carousel-stage"
-    onPointerDown={e=>{carouselDragStart.current=e.clientX;suppressCarouselClick.current=false;}}
-    onPointerUp={e=>{if(carouselDragStart.current!==null){const delta=e.clientX-carouselDragStart.current;if(Math.abs(delta)>45&&heroProducts.length>1){suppressCarouselClick.current=true;setHeroIndex(i=>(i+(delta<0?1:-1)+heroProducts.length)%heroProducts.length)}carouselDragStart.current=null}}}
-    onPointerCancel={()=>{carouselDragStart.current=null}}
+    onMouseEnter={()=>setHeroPaused(true)}
+    onMouseLeave={()=>setHeroPaused(false)}                       
+    <div className="hero-carousel-stage"
+    onMouseEnter={()=>setHeroPaused(true)}
+    onMouseLeave={()=>setHeroPaused(false)}
+    onPointerDown={e=>{
+      setHeroPaused(true);
+      carouselDragStart.current=e.clientX;
+      suppressCarouselClick.current=false;
+    }}
+    onPointerUp={e=>{
+      if(carouselDragStart.current!==null){
+        const delta=e.clientX-carouselDragStart.current;
+        if(Math.abs(delta)>45&&heroProducts.length>1){
+          suppressCarouselClick.current=true;
+          setHeroIndex(i=>(i+(delta<0?1:-1)+heroProducts.length)%heroProducts.length);
+        }
+        carouselDragStart.current=null;
+      }
+      setHeroPaused(false);
+    }}
+    onPointerCancel={()=>{
+      carouselDragStart.current=null;
+      setHeroPaused(false);
+    }}
     onClickCapture={e=>{if(suppressCarouselClick.current){e.preventDefault();e.stopPropagation();suppressCarouselClick.current=false}}}
     style={{touchAction:'pan-y',cursor:'grab'}}
   >
@@ -724,13 +748,13 @@ const generateAiDescription=async()=>{
         <button className="engage-chip" onClick={()=>{setOnlyFav(true);setOnlyNew(false);setCategoryFocus(false);setView('catalog')}}><Heart size={16}/> Список бажань</button>
       </section>
       {/* Повторну смугу новинок прибрано: повна добірка розміщена вище. */}
-      {featureSettings.recommendations&&products.some(p=>p.is_recommended&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ДОБІРКА AMAZONSAN</span><h2>Рекомендуємо</h2><p>Редакційна добірка власника каталогу</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_recommended).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      {featureSettings.bestsellers&&products.some(p=>p.is_best_seller&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОБИРАЮТЬ ЧАСТІШЕ</span><h2>Хіти продажів</h2><p>Товари, які власник каталогу позначив як найпопулярніші</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_best_seller).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      {products.some(p=>p.status==='published'&&p.is_editor_pick)&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОСОБЛИВА ДОБІРКА</span><h2>Вибір AMAZONSAN</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_editor_pick).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      {products.some(p=>p.status==='published'&&p.is_deal_of_day)&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОБРАНА ПРОПОЗИЦІЯ</span><h2>Товар дня</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_deal_of_day).slice(0,1).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
-      {featureSettings.deals&&products.some(p=>p.status==='published'&&p.original_price_uah>p.price_uah)&&<section className="promo-section deal-section"><div className="section-head"><div><span className="eyebrow">ВИГІДНІ ПРОПОЗИЦІЇ</span><h2>Акції та знижки</h2><p>Порівнюй стару та актуальну ціну</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.original_price_uah>p.price_uah).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><del>{money(p.original_price_uah)}</del><b>{money(p.price_uah)} · −{Math.round((1-p.price_uah/p.original_price_uah)*100)}%</b></button>)}</div></section>}
+      {featureSettings.recommendations&&products.some(p=>p.is_recommended&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ДОБІРКА AMAZONSAN</span><h2>Рекомендуємо</h2><p>Редакційна добірка власника каталогу</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_recommended).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)&&<img src={p.image_urls?.[0]||p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
+      {featureSettings.bestsellers&&products.some(p=>p.is_best_seller&&p.status==='published')&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОБИРАЮТЬ ЧАСТІШЕ</span><h2>Хіти продажів</h2><p>Товари, які власник каталогу позначив як найпопулярніші</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_best_seller).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)&&<img src={p.image_urls?.[0]||p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
+      {products.some(p=>p.status==='published'&&p.is_editor_pick)&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОСОБЛИВА ДОБІРКА</span><h2>Вибір AMAZONSAN</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_editor_pick).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)&&<img src={p.image_urls?.[0]||p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
+      {products.some(p=>p.status==='published'&&p.is_deal_of_day)&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ОБРАНА ПРОПОЗИЦІЯ</span><h2>Товар дня</h2></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.is_deal_of_day).slice(0,1).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)&&<img src={p.image_urls?.[0]||p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
+      {featureSettings.deals&&products.some(p=>p.status==='published'&&p.original_price_uah>p.price_uah)&&<section className="promo-section deal-section"><div className="section-head"><div><span className="eyebrow">ВИГІДНІ ПРОПОЗИЦІЇ</span><h2>Акції та знижки</h2><p>Порівнюй стару та актуальну ціну</p></div></div><div className="promo-strip">{products.filter(p=>p.status==='published'&&p.original_price_uah>p.price_uah).slice(0,4).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)&&<img src={p.image_urls?.[0]||p.image_url} alt=""/>}<span>{p.title}</span><del>{money(p.original_price_uah)}</del><b>{money(p.price_uah)} · −{Math.round((1-p.price_uah/p.original_price_uah)*100)}%</b></button>)}</div></section>}
       {featureSettings.smart&&<section className="smart-callout"><div><span className="eyebrow">НЕ ЗНАЄШ, ЩО ОБРАТИ?</span><h2>Знайдемо те, що підходить саме тобі</h2><p>Вкажи бюджет і призначення — підберемо відповідні позиції з каталогу.</p></div><button className="btn primary" onClick={()=>setSmartFinder(true)}>Підібрати товар <ChevronRight size={17}/></button></section>}
-      {featureSettings.recent&&recentlyViewed.length>0&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ПОВЕРНИСЯ ДО ЦІКАВОГО</span><h2>Нещодавно переглянуті</h2></div></div><div className="promo-strip">{recentlyViewed.map(id=>products.find(p=>p.id===id)).filter(Boolean).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{p.image_url&&<img src={p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
+      {featureSettings.recent&&recentlyViewed.length>0&&<section className="promo-section"><div className="section-head"><div><span className="eyebrow">ПОВЕРНИСЯ ДО ЦІКАВОГО</span><h2>Нещодавно переглянуті</h2></div></div><div className="promo-strip">{recentlyViewed.map(id=>products.find(p=>p.id===id)).filter(Boolean).map(p=><button key={p.id} onClick={()=>openProduct(p)}>{(p.image_urls?.[0]||p.image_url)&&<img src={p.image_urls?.[0]||p.image_url} alt=""/>}<span>{p.title}</span><b>{money(p.price_uah)}</b></button>)}</div></section>}
       </>}
       <section className="catalog-section future-catalog">
         <div className="section-head">
