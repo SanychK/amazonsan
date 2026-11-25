@@ -596,9 +596,6 @@ const generateAiDescription=async()=>{
   {heroProducts.length>0?<div className="hero-carousel-stage"
     onMouseEnter={()=>setHeroPaused(true)}
     onMouseLeave={()=>setHeroPaused(false)}                       
-    <div className="hero-carousel-stage"
-    onMouseEnter={()=>setHeroPaused(true)}
-    onMouseLeave={()=>setHeroPaused(false)}
     onPointerDown={e=>{
       setHeroPaused(true);
       carouselDragStart.current=e.clientX;
