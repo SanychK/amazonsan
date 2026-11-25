@@ -118,6 +118,15 @@ create policy "product images admin delete" on storage.objects for delete to aut
 
 -- AMAZONSAN growth features: inventory, pricing labels and editorial merchandising.
 alter table public.products add column if not exists original_price_uah numeric(12,2);
+-- Brand and exact product model
+alter table public.products add column if not exists brand text;
+alter table public.products add column if not exists model text;
+
+create index if not exists products_brand_idx
+on public.products (brand);
+
+create index if not exists products_model_idx
+on public.products (model);
 alter table public.products add column if not exists stock_status text not null default 'in_stock' check (stock_status in ('in_stock','out_of_stock'));
 alter table public.products add column if not exists is_best_seller boolean not null default false;
 alter table public.products add column if not exists is_recommended boolean not null default false;
