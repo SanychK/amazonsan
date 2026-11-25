@@ -173,7 +173,6 @@ const [heroPaused,setHeroPaused]=useState(false)
    }).slice(0,8)
  },[publishedProducts])
  useEffect(()=>{
-   [view,query,categoryFocus,heroProducts.length,heroPaused]
    if(view!=='catalog'||query.trim()||categoryFocus||heroProducts.length<2||heroPaused)return
    const timer=window.setInterval(()=>{
      if(document.visibilityState==='visible')setHeroIndex(index=>(index+1)%heroProducts.length)
