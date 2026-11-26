@@ -514,7 +514,7 @@ const generateAiDescription = async () => {
 <div className="full">
   <button type="button" className="btn secondary" onClick={generateAiDescription} disabled={aiBusy}>
     <Sparkles size={16}/>
-    {aiBusy ? 'Створюю опис…' : 'Створити опис із введених даних'}
+    {aiBusy ? 'Створюю опис…' : 'Створити картку товару'}
   </button>
 
   {aiError && <p className="error">{aiError}</p>}
