@@ -159,15 +159,6 @@ const [heroPaused,setHeroPaused]=useState(false)
     return words.every(word=>tokens.some(token=>token===word))
   })
 }
-  const words=normalize(query).split(/\s+/).filter(Boolean)
-  arr=arr.filter(p=>{
-    const text=normalize([p.title,p.brand,p.model,p.description,p.category,p.subcategory,p.sku]
-      .filter(Boolean).join(' '))
-    const tokens=text.split(/\s+/).filter(Boolean)
-    // Шукаємо ціле слово, а не довільний фрагмент іншого слова.
-    return words.every(word=>tokens.some(token=>token===word))
-  })
-}
    if(sort==='priceUp')arr.sort((a,b)=>(a.price_uah||0)-(b.price_uah||0))
    if(sort==='priceDown')arr.sort((a,b)=>(b.price_uah||0)-(a.price_uah||0))
    if(sort==='name')arr.sort((a,b)=>a.title.localeCompare(b.title,'uk'))
