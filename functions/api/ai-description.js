@@ -1,4 +1,3 @@
-
 export async function onRequestPost({ request, env }) {
   const json = (data, status = 200) =>
     new Response(JSON.stringify(data), {
@@ -66,49 +65,68 @@ export async function onRequestPost({ request, env }) {
       return json({ error: "Вкажи назву товару." }, 400);
     }
 
-    // Пошук Tavily. Якщо ключ відсутній, ліміт вичерпано
-    // або сервіс недоступний — AI продовжує роботу без пошуку.
+    // Розширений пошук Tavily: характеристики, інструкції та точна модель.
+    // Якщо пошук недоступний або ліміт вичерпано — працює резервний AI.
     let searchResults = [];
     let searchUsed = false;
 
     if (env.TAVILY_API_KEY) {
       try {
-        const searchResponse = await fetch(
-          "https://api.tavily.com/search",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${env.TAVILY_API_KEY}`,
-            },
-            body: JSON.stringify({
-              query: `${title} official product information specifications features model brand`,
-              search_depth: "basic",
-              max_results: 6,
-              include_raw_content: true,
-            }),
-          }
+        const queries = [
+          `${title} technical specifications power wattage capacity dimensions`,
+          `${title} user manual instruction manual PDF specifications`,
+          `${title} manufacturer product details features model parameters`,
+        ];
+
+        const responses = await Promise.all(
+          queries.map(async (query) => {
+            try {
+              const response = await fetch("https://api.tavily.com/search", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${env.TAVILY_API_KEY}`,
+                },
+                body: JSON.stringify({
+                  query,
+                  search_depth: "basic",
+                  max_results: 5,
+                  include_raw_content: true,
+                }),
+              });
+
+              if (!response.ok) return [];
+
+              const data = await response.json();
+              return Array.isArray(data.results) ? data.results : [];
+            } catch {
+              return [];
+            }
+          })
         );
 
-        if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
+        const uniqueResults = new Map();
 
-          searchResults = (searchData.results || [])
-            .filter(
-              (item) =>
-                item?.url && (item.content || item.raw_content)
-            )
-            .slice(0, 6)
-            .map((item) => ({
-              title: String(item.title || "").slice(0, 250),
-              url: String(item.url || "").slice(0, 1000),
+        for (const result of responses.flat()) {
+          if (!result?.url || (!result.content && !result.raw_content)) {
+            continue;
+          }
+
+          const url = String(result.url);
+
+          if (!uniqueResults.has(url)) {
+            uniqueResults.set(url, {
+              title: String(result.title || "").slice(0, 250),
+              url: url.slice(0, 1000),
               content: String(
-                item.raw_content || item.content || ""
-              ).slice(0, 4000),
-            }));
-
-          searchUsed = searchResults.length > 0;
+                result.raw_content || result.content || ""
+              ).slice(0, 3500),
+            });
+          }
         }
+
+        searchResults = Array.from(uniqueResults.values()).slice(0, 10);
+        searchUsed = searchResults.length > 0;
       } catch {
         searchResults = [];
         searchUsed = false;
@@ -117,7 +135,7 @@ export async function onRequestPost({ request, env }) {
 
     const sourceContext = searchResults.length
       ? JSON.stringify(searchResults)
-      : "Пошук недоступний. Підготуй лише загальну інформацію з назви та не вигадуй точні характеристики.";
+      : "Пошук недоступний. Не вигадуй технічні характеристики. Заповнюй лише підтверджені дані.";
 
     const categories = [
       {
@@ -226,13 +244,36 @@ ${sourceContext}
 4. model — точна модель.
 Не вигадуй позначень.
 
-5. specs — характеристики.
-Знайди максимум підтверджених характеристик.
-Використовуй офіційні джерела виробника, якщо вони доступні.
-За можливості звіряй інформацію з кількома джерелами.
-Не додавай суперечливі або непідтверджені параметри.
-Кожна характеристика з нового рядка:
-Назва: значення.
+5. 
+5. specs — технічні характеристики товару.
+
+Це одне з найважливіших полів картки. Не обмежуйся загальним описом товару.
+
+Уважно проаналізуй усі знайдені джерела, інструкції, таблиці параметрів і технічні описи.
+
+Шукай усі доступні параметри, які стосуються конкретної моделі:
+- Потужність (Вт).
+- Напруга та сила струму.
+- Тип і джерело живлення.
+- Ємність акумулятора, якщо є.
+- Об'єм резервуара або місткість.
+- Продуктивність і витрата.
+- Кількість режимів і швидкостей.
+- Розміри та вага.
+- Матеріали.
+- Рівень шуму.
+- Час роботи та заряджання.
+- Інші важливі параметри залежно від типу товару.
+
+Для кожної категорії визначай відповідні саме цьому товару характеристики. Не намагайся заповнювати параметри, які до нього не стосуються.
+
+Кожну знайдену характеристику записуй окремим рядком у форматі:
+Назва характеристики: значення.
+
+Не перенось технічні характеристики в description.
+Не замінюй конкретні параметри загальними словами на кшталт «ефективний», «потужний» або «зручний».
+Якщо числове значення знайдене в надійному джерелі, обов'язково внеси його.
+Якщо джерела суперечать одне одному або значення не підтверджене — не вигадуй його.
 
 6. sku — артикул або код товару.
 Заповнюй тільки якщо точний код підтверджений джерелом.
