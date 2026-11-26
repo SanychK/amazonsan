@@ -363,6 +363,7 @@ const [heroPaused,setHeroPaused]=useState(false)
  }
  const setField=(k,v)=>setForm(f=>({...f,[k]:v}))
  
+
 const generateAiDescription = async () => {
   if (!isAdmin || !session?.access_token) {
     setAiError('Увійди в акаунт адміністратора.')
@@ -371,11 +372,6 @@ const generateAiDescription = async () => {
 
   if (!form.title.trim()) {
     setAiError('Спочатку введи назву товару.')
-    return
-  }
-
-  if (!aiPurpose.trim() && !form.specs?.trim()) {
-    setAiError('Додай призначення або характеристики товару.')
     return
   }
 
@@ -390,22 +386,18 @@ const generateAiDescription = async () => {
         Authorization: `Bearer ${session.access_token}`
       },
       body: JSON.stringify({
-        title: form.title,
-        brand: form.brand,
-        model: aiModel || form.model,
-        purpose: aiPurpose,
-        specs: form.specs
+        title: form.title
       })
     })
 
     const data = await response.json()
 
     if (!response.ok) {
-      throw new Error(data.error || 'Не вдалося створити опис товару.')
+      throw new Error(data.error || 'Не вдалося створити картку товару.')
     }
 
     if (!data.description?.trim()) {
-      throw new Error('AI не створив достовірний опис. Додай більше інформації.')
+      throw new Error('AI не зміг підготувати опис товару.')
     }
 
     setField('description', data.description.trim())
@@ -419,11 +411,23 @@ const generateAiDescription = async () => {
       setAiModel(data.model)
     }
 
+    if (typeof data.purpose === 'string') {
+      setAiPurpose(data.purpose)
+    }
+
     if (typeof data.specs === 'string') {
       setField('specs', data.specs)
     }
 
-    notify('Опис і дані товару підготовлено. Перевір їх перед збереженням.')
+    if (typeof data.category === 'string') {
+      setField('category', data.category)
+    }
+
+    if (typeof data.subcategory === 'string') {
+      setField('subcategory', data.subcategory)
+    }
+
+    notify('AI підготував картку товару. Перевір дані перед збереженням.')
 
   } catch (error) {
     setAiError(error.message || 'Помилка AI-помічника. Спробуй ще раз.')
