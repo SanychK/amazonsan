@@ -211,8 +211,13 @@ const [heroPaused,setHeroPaused]=useState(false)
  const searchSuggestions=useMemo(()=>{
    const term=query.trim().toLocaleLowerCase('uk-UA')
    if(!term)return searchHistory.slice(0,6).map(label=>({type:'Історія',label,action:()=>runSearch(label)}))
-   const normalizedTerm=term.normalize('NFC').replace(/[’'`]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(/\s+/).filter(Boolean)
-   const productMatches=publishedProducts.filter(p=>{const tokens=[p.title,p.brand,p.model,p.sku,p.category,p.subcategory,p.description].filter(Boolean).join(' ').toLocaleLowerCase('uk-UA').normalize('NFC').replace(/[’'`]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(/\s+/);return normalizedTerm.every(word=>tokens.includes(word))}).slice(0,5).map(p=>({type:'Товар',label:p.title,action:()=>{setSearchFocused(false);openProduct(p)}}))
+      const normalizedTerm=normalizeSearchText(term).split(/\s+/).filter(Boolean)
+   const productMatches=publishedProducts.filter(p=>{
+     const tokens=normalizeSearchText([
+       p.title,p.brand,p.model,p.sku,p.category,p.subcategory,p.description
+     ].filter(Boolean).join(' ')).split(/\s+/).filter(Boolean)
+     return normalizedTerm.every(word=>tokens.includes(word))
+   }).slice(0,5).map(p=>({type:'Товар',label:p.title,action:()=>{setSearchFocused(false);openProduct(p)}}))
    const categoryMatches=categories.filter(c=>c.name.toLocaleLowerCase('uk-UA').includes(term)||c.subs.some(s=>s.toLocaleLowerCase('uk-UA').includes(term))).slice(0,3).map(c=>({type:'Категорія',label:c.name,action:()=>{setSearchFocused(false);setQuery('');openHeroCategory(c.name)}}))
    return [...productMatches,...categoryMatches]
  },[query,searchHistory,publishedProducts])
