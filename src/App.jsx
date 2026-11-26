@@ -362,7 +362,6 @@ const [heroPaused,setHeroPaused]=useState(false)
    try{const rows=JSON.parse(await file.text());if(!Array.isArray(rows))throw Error('Очікується JSON-масив товарів');const clean=rows.map(({id,created_at,...p})=>({...p,created_by:session.user.id}));const {error}=await supabase.from('products').insert(clean);if(error)throw error;await reloadProducts();notify('Імпорт завершено.')}catch(e){notify('Помилка імпорту: '+e.message)}
  }
  const setField=(k,v)=>setForm(f=>({...f,[k]:v}))
- 
 
 const generateAiDescription = async () => {
   if (!isAdmin || !session?.access_token) {
@@ -427,7 +426,19 @@ const generateAiDescription = async () => {
       setField('subcategory', data.subcategory)
     }
 
-    notify('AI підготував картку товару. Перевір дані перед збереженням.')
+    if (typeof data.sku === 'string') {
+      setField('sku', data.sku)
+    }
+
+    if (typeof data.amazon_url === 'string') {
+      setField('amazon_url', data.amazon_url)
+    }
+
+    notify(
+      data.searchUsed
+        ? 'Картку створено з використанням пошуку в інтернеті. Перевір дані перед збереженням.'
+        : 'Картку створено в резервному режимі без пошуку. Перевір дані перед збереженням.'
+    )
 
   } catch (error) {
     setAiError(error.message || 'Помилка AI-помічника. Спробуй ще раз.')
@@ -435,6 +446,7 @@ const generateAiDescription = async () => {
     setAiBusy(false)
   }
 }
+
   const sendInquiry=async()=>{
    if(!selected)return
    if(!inquiryForm.name.trim()||!inquiryForm.contact.trim()){notify('Вкажи ім’я та телефон або email для зв’язку.');return}
