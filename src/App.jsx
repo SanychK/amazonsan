@@ -135,6 +135,27 @@ const [heroPaused,setHeroPaused]=useState(false)
 
   loadCatalog()
 },[session])
+ useEffect(()=>{
+  const syncProductFromUrl=()=>{
+    const match=window.location.pathname.match(/^\/product\/([0-9a-f-]{36})\/?$/i)
+    if(!match){
+      setSelected(null)
+      return
+    }
+
+    const product=products.find(
+      p=>String(p.id).toLowerCase()===match[1].toLowerCase()
+    )
+    if(product){
+      setSelectedImageIndex(0)
+      setSelected(product)
+    }
+  }
+
+  syncProductFromUrl()
+  window.addEventListener('popstate',syncProductFromUrl)
+  return ()=>window.removeEventListener('popstate',syncProductFromUrl)
+ },[products])
  const reloadProducts=async()=>{
    if(!configured)return
    const {data,error}=await supabase.from('products').select('*').order('created_at',{ascending:false})
@@ -221,7 +242,39 @@ const [heroPaused,setHeroPaused]=useState(false)
    const categoryMatches=categories.filter(c=>c.name.toLocaleLowerCase('uk-UA').includes(term)||c.subs.some(s=>s.toLocaleLowerCase('uk-UA').includes(term))).slice(0,3).map(c=>({type:'Категорія',label:c.name,action:()=>{setSearchFocused(false);setQuery('');openHeroCategory(c.name)}}))
    return [...productMatches,...categoryMatches]
  },[query,searchHistory,publishedProducts])
- const openProduct=p=>{setSelectedImageIndex(0);setSelected(p);setRecentlyViewed(old=>{const next=[p.id,...old.filter(id=>id!==p.id)].slice(0,8);localStorage.setItem('amazonsan_recent',JSON.stringify(next));return next})}
+ const openProduct=p=>{
+  if(!p?.id)return
+
+  const productUrl=`/product/${p.id}`
+  if(window.location.pathname!==productUrl){
+    window.history.pushState({productId:p.id},'',productUrl)
+  }
+
+  setSelectedImageIndex(0)
+  setSelected(p)
+  setRecentlyViewed(old=>{
+    const next=[p.id,...old.filter(id=>id!==p.id)].slice(0,8)
+    localStorage.setItem('amazonsan_recent',JSON.stringify(next))
+    return next
+  })
+ }
+ const closeProduct=()=>{
+  if(window.location.pathname.startsWith('/product/')){
+    window.history.replaceState({},'', '/')
+  }
+  setSelected(null)
+  setSelectedImageIndex(0)
+ }
+ const copyProductLink=async()=>{
+  if(!selected?.id)return
+  const link=`${window.location.origin}/product/${selected.id}`
+  try{
+    await navigator.clipboard.writeText(link)
+    notify('Посилання на товар скопійовано.')
+  }catch{
+    notify('Не вдалося скопіювати посилання. Спробуй ще раз.')
+  }
+ }
  const toggleCompare=id=>setCompare(old=>old.includes(id)?old.filter(x=>x!==id):old.length<4?[...old,id]:(notify('Можна порівняти до 4 товарів.'),old))
  const toggleFeature=k=>setFeatureSettings(old=>{const next={...old,[k]:!old[k]};localStorage.setItem('amazonsan_sections',JSON.stringify(next));return next})
  const toggleFavorite=async id=>{
@@ -269,7 +322,7 @@ const [heroPaused,setHeroPaused]=useState(false)
   setFavorites(current=>current.filter(x=>x!==id))
   setCompare(current=>current.filter(x=>x!==id))
 
-  if(selected?.id===id)setSelected(null)
+  if(selected?.id===id)closeProduct()
 
   notify('Товар успішно видалено.')
 }
@@ -455,7 +508,7 @@ const generateAiDescription = async () => {
    const {error}=await supabase.from('product_inquiries').insert({product_id:selected.id,product_title:selected.title,price_uah:selected.price_uah??null,customer_name:inquiryForm.name.trim(),customer_contact:inquiryForm.contact.trim(),message:inquiryForm.message.trim()||null})
    setInquiryBusy(false)
    if(error){notify('Не вдалося надіслати звернення. Спробуй ще раз.');return}
-   setInquiryOpen(false);setInquiryForm({name:'',contact:'',message:''});setSelected(null);notify('Звернення надіслано власнику каталогу. Дякуємо!')
+   setInquiryOpen(false);setInquiryForm({name:'',contact:'',message:''});closeProduct();notify('Звернення надіслано власнику каталогу. Дякуємо!')
  }
  const openInquiries=async()=>{
    if(!isAdmin||!configured)return
@@ -492,7 +545,7 @@ const generateAiDescription = async () => {
   setStockFilter('all')
   setSort('new')
   setView('catalog')
-  setSelected(null)
+  closeProduct()
   setSidebar(false)
   setCategoryMenuOpen(false)
   window.scrollTo({top:0,behavior:'smooth'})
@@ -587,7 +640,7 @@ AI використовує лише введені дані. Не вигаду�
  return <div className="app-shell">
   <header className="topbar"><div className="top-inner"><button className="mobile-menu icon-btn" onClick={()=>setSidebar(!sidebar)}><Menu/></button><button className="brand" onClick={()=>{
   setView('catalog')
-  setSelected(null)
+  closeProduct()
   setCategory('Усі категорії')
   setSubcategory('Усі підкатегорії')
   setQuery('')
@@ -620,7 +673,7 @@ AI використовує лише введені дані. Не вигаду�
   <div className="layout">
    <aside className={`sidebar ${sidebar?'open':''}`}><div className="side-head"><span>КАТАЛОГ</span><button className="mobile-menu icon-btn" onClick={()=>setSidebar(false)}><X/></button></div>
     <button className={`cat-link ${category==='Усі категорії'?'selected':''}`} onClick={()=>openHeroCategory('Усі категорії')}><LayoutGrid size={17}/> Усі категорії</button>
-{categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>{setExpandedCategory(expandedCategory===c.name?'':c.name);openHeroCategory(c.name)}}><span className="cat-icon"><CategoryIcon name={c.name} size={18}/></span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{expandedCategory===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>{setSubcategory(s);setCategoryFocus(true);setOnlyFav(false);setOnlyNew(false);setQuery('');setView('catalog');setSelected(null);setSidebar(false);setCategoryMenuOpen(false);window.scrollTo({top:0,behavior:'smooth'})}}>{s}</button>)}</div>}</div>)}
+{categories.map(c=><div key={c.name}><button className={`cat-link ${category===c.name?'selected':''}`} onClick={()=>{setExpandedCategory(expandedCategory===c.name?'':c.name);openHeroCategory(c.name)}}><span className="cat-icon"><CategoryIcon name={c.name} size={18}/></span>{c.name}<ChevronRight size={14} className="cat-arrow"/></button>{expandedCategory===c.name&&<div className="subcats">{c.subs.map(s=><button className={subcategory===s?'sub-active':''} onClick={()=>{setSubcategory(s);setCategoryFocus(true);setOnlyFav(false);setOnlyNew(false);setQuery('');setView('catalog');closeProduct();setSidebar(false);setCategoryMenuOpen(false);window.scrollTo({top:0,behavior:'smooth'})}}>{s}</button>)}</div>}</div>)}
     <div className="sidebar-bottom"><div className="mini-note"><Sparkles size={16}/><b>Знаходь цікаве</b><p>Каталог корисних товарів з Amazon в одному місці.</p></div><span>© 2026 amazonsan</span></div>
    </aside>
    <main className={`main ${categoryFocus?'category-focus':''}`}>
@@ -725,7 +778,7 @@ AI використовує лише введені дані. Не вигаду�
           </div>
           <div className="product-info">
             <span className="product-category"><CategoryIcon name={p.category} size={13}/>{p.category}</span>
-            <h3 onClick={() => openProduct(p)}>{p.title}</h3>
+            <h3><a href={`/product/${p.id}`} style={{color:'inherit',textDecoration:'none'}} onClick={e=>{e.preventDefault();openProduct(p)}}>{p.title}</a></h3>
             <p>{p.description || 'Детальна інформація про товар незабаром.'}</p>
             <div className="product-bottom">
               <div>
@@ -799,12 +852,12 @@ AI використовує лише введені дані. Не вигаду�
         {(query || category!=='Усі категорії' || onlyFav || onlyNew || budgetCap || stockFilter!=='all') && <div className="active-filter">{query?`Пошук: ${query}`:onlyNew?'Новинки':onlyFav?'Показано обране':category}<button onClick={()=>{setQuery('');setCategory('Усі категорії');setSubcategory('Усі підкатегорії');setOnlyFav(false);setOnlyNew(false);setCategoryFocus(false);setBudgetCap('');setStockFilter('all')}}>✕ Очистити</button></div>}
         <div className="future-results">ЗНАЙДЕНО <b>{visible.length}</b> ТОВАРІВ <span>·</span> {subcategory!=='Усі підкатегорії'?subcategory:'УСІ ПІДКАТЕГОРІЇ'}</div>
         {visible.length ? <div className="product-grid">{visible.map(p=><article className="product-card future-product" key={p.id}>
-          <div className="product-image" onClick={()=>openProduct(p)} role="button" tabIndex={0} onKeyDown={e=>e.key==='Enter'&&setSelected(p)}>
+          <div className="product-image" onClick={()=>openProduct(p)} role="button" tabIndex={0} onKeyDown={e=>e.key==='Enter'&&openProduct(p)}>
             {(p.image_urls?.[0]||p.image_url)?<img src={p.image_urls?.[0]||p.image_url} alt={p.title} loading="lazy"/>:<div className="image-placeholder"><Package/></div>}
             {p.is_new&&<span className="tag new">НОВИНКА</span>}{p.is_popular&&<span className="tag popular">ПОПУЛЯРНЕ</span>}{p.is_best_seller&&<span className="tag best">ХІТ ПРОДАЖІВ</span>}{p.is_editor_pick&&<span className="tag editorial">ВИБІР AMAZONSAN</span>}{p.is_exclusive&&<span className="tag exclusive">ЕКСКЛЮЗИВ</span>}{p.is_deal_of_day&&<span className="tag daydeal">ТОВАР ДНЯ</span>}{p.original_price_uah>p.price_uah&&<span className="tag sale">−{Math.round((1-p.price_uah/p.original_price_uah)*100)}%</span>}{p.stock_status==='out_of_stock'&&<span className="tag soldout">НЕМАЄ В НАЯВНОСТІ</span>}
             <button className={`fav-btn ${favorites.includes(p.id)?'liked':''}`} onClick={e=>{e.stopPropagation();toggleFavorite(p.id)}} title="В обране"><Heart size={16} fill={favorites.includes(p.id)?'currentColor':'none'}/></button>
           </div>
-          <div className="product-info"><span className="product-category"><CategoryIcon name={p.category} size={13}/>{p.category}{p.subcategory?` · ${p.subcategory}`:''}</span><h3 onClick={()=>openProduct(p)}>{p.title}</h3><p>{p.description||'Детальна інформація про товар незабаром.'}</p>
+          <div className="product-info"><span className="product-category"><CategoryIcon name={p.category} size={13}/>{p.category}{p.subcategory?` · ${p.subcategory}`:''}</span><h3><a href={`/product/${p.id}`} style={{color:'inherit',textDecoration:'none'}} onClick={e=>{e.preventDefault();openProduct(p)}}>{p.title}</a></h3><p>{p.description||'Детальна інформація про товар незабаром.'}</p>
             <div className="product-bottom"><div>{p.original_price_uah>p.price_uah&&<del className="old-price">{money(p.original_price_uah)}</del>}<b>{money(p.price_uah)}</b>{p.price_usd!=null&&<small>${p.price_usd} на Amazon</small>}</div><button className="arrow-btn" onClick={()=>openProduct(p)} aria-label="Детальніше"><ChevronRight size={18}/></button></div>
             <button className={`compare-toggle ${compare.includes(p.id)?'selected':''}`} onClick={()=>toggleCompare(p.id)}>{compare.includes(p.id)?'✓ Додано до порівняння':'+ Порівняти'}</button>{isAdmin&&<div className="admin-inline"><button onClick={()=>deleteProduct(p.id)}><Trash2 size={13}/> Видалити</button><button onClick={()=>startEdit(p)}><Pencil size={13}/> Редагувати</button></div>}
           </div>
@@ -860,7 +913,7 @@ AI використовує лише введені дані. Не вигаду�
     </div>
   </div>
 }
-  {selected&&<div className="overlay" onClick={()=>setSelected(null)}><div className="modal detail-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><span className="eyebrow">ДЕТАЛІ ТОВАРУ</span><button className="icon-btn" onClick={()=>setSelected(null)}><X/></button></div><div className="detail-grid"><div className="detail-gallery">
+  {selected&&<div className="overlay" onClick={closeProduct}><div className="modal detail-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><span className="eyebrow">ДЕТАЛІ ТОВАРУ</span><button className="icon-btn" onClick={closeProduct}><X/></button></div><div className="detail-grid"><div className="detail-gallery">
   <div className="detail-image">
     {(selected.image_urls?.[selectedImageIndex]||selected.image_url)
       ?<img src={selected.image_urls?.[selectedImageIndex]||selected.image_url} alt={selected.title}/>
@@ -875,7 +928,7 @@ AI використовує лише введені дані. Не вигаду�
       ))}
     </div>
   }
-</div><div><span className="product-category"><CategoryIcon name={selected.category} size={13}/>{selected.category} · {selected.subcategory}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="detail-price">{selected.original_price_uah>selected.price_uah&&<del className="old-price">{money(selected.original_price_uah)}</del>}{money(selected.price_uah)}{selected.price_usd&&<small>${selected.price_usd} на Amazon</small>}</div>{Array.isArray(selected.specs)&&selected.specs.length>0&&<ul className="spec-list">{selected.specs.map((s,index)=><li key={`${selected.id}-spec-${index}`}>{s}</li>)}</ul>}<div className="detail-actions"><button className="btn secondary" onClick={()=>toggleCompare(selected.id)}>Порівняти</button><button className="btn secondary" onClick={()=>toggleFavorite(selected.id)}><Heart size={17}/> Зберегти</button><button className="btn primary" onClick={()=>setInquiryOpen(true)}><Mail size={16}/> Зв’язатися з власником</button>{selected.amazon_url&&<a className="btn secondary" href={selected.amazon_url} target="_blank" rel="noreferrer">Джерело товару <ExternalLink size={16}/></a>}</div><p className="inquiry-note">Це інформаційний каталог. Надсилання звернення не є оформленням замовлення або оплатою.</p></div></div></div></div>}
+</div><div><span className="product-category"><CategoryIcon name={selected.category} size={13}/>{selected.category} · {selected.subcategory}</span><h2>{selected.title}</h2><p>{selected.description}</p><div className="detail-price">{selected.original_price_uah>selected.price_uah&&<del className="old-price">{money(selected.original_price_uah)}</del>}{money(selected.price_uah)}{selected.price_usd&&<small>${selected.price_usd} на Amazon</small>}</div><p className="inquiry-note">ID товару: <code>{selected.id}</code></p>{Array.isArray(selected.specs)&&selected.specs.length>0&&<ul className="spec-list">{selected.specs.map((s,index)=><li key={`${selected.id}-spec-${index}`}>{s}</li>)}</ul>}<div className="detail-actions"><button className="btn secondary" onClick={copyProductLink}><Download size={16}/> Копіювати посилання</button><button className="btn secondary" onClick={()=>toggleCompare(selected.id)}>Порівняти</button><button className="btn secondary" onClick={()=>toggleFavorite(selected.id)}><Heart size={17}/> Зберегти</button><button className="btn primary" onClick={()=>setInquiryOpen(true)}><Mail size={16}/> Зв’язатися з власником</button>{selected.amazon_url&&<a className="btn secondary" href={selected.amazon_url} target="_blank" rel="noreferrer">Джерело товару <ExternalLink size={16}/></a>}</div><p className="inquiry-note">Це інформаційний каталог. Надсилання звернення не є оформленням замовлення або оплатою.</p></div></div></div></div>}
   {smartFinder&&<div className="overlay" onClick={()=>setSmartFinder(false)}><div className="modal auth-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">SMART FINDER</span><h2>Розумний підбір товару</h2></div><button className="icon-btn" onClick={()=>setSmartFinder(false)}><X/></button></div><label>Для чого шукаєш товар?<select value={finderNeed} onChange={e=>setFinderNeed(e.target.value)}><option value="">Будь-яке призначення</option>{categories.map(c=><option value={c.name}>{c.name}</option>)}</select></label><label>Бюджет до (грн)<input type="number" min="0" value={finderBudget} onChange={e=>setFinderBudget(e.target.value)} placeholder="Наприклад, 3000"/></label><label>Що найважливіше?<input value={finderFeature} onChange={e=>setFinderFeature(e.target.value)} placeholder="Наприклад, автономність, компактність"/></label><p className="muted">Підбір використовує наявні категорії, ціни та описи каталогу. Це базовий фільтр, не зовнішній AI-сервіс.</p><button className="btn primary full-btn" onClick={()=>{setCategory(finderNeed||'Усі категорії');setSubcategory('Усі підкатегорії');setQuery(finderFeature);setBudgetCap(finderBudget);setSort('priceUp');setOnlyFav(false);setOnlyNew(false);setCategoryFocus(false);setSmartFinder(false);setView('catalog');setTimeout(()=>document.querySelector('.catalog-section')?.scrollIntoView({behavior:'smooth'}),100)}}>Показати відповідні товари</button></div></div>}
   {inquiryOpen&&selected&&<div className="overlay" onClick={()=>setInquiryOpen(false)}><div className="modal auth-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">ЗВЕРНЕННЯ ДО ВЛАСНИКА</span><h2>Зацікавив товар?</h2></div><button className="icon-btn" onClick={()=>setInquiryOpen(false)}><X/></button></div><p><b>{selected.title}</b><br/><span className="muted">{money(selected.price_uah)} · ціна для ознайомлення на момент звернення</span></p><label>Ваше ім’я<input value={inquiryForm.name} onChange={e=>setInquiryForm(f=>({...f,name:e.target.value}))} maxLength={100} placeholder="Як до вас звертатися"/></label><label>Телефон або email для зв’язку<input value={inquiryForm.contact} onChange={e=>setInquiryForm(f=>({...f,contact:e.target.value}))} maxLength={180} placeholder="Номер телефону або email"/></label><label>Повідомлення (необов’язково)<textarea rows="3" value={inquiryForm.message} onChange={e=>setInquiryForm(f=>({...f,message:e.target.value}))} maxLength={1000} placeholder="Ваше запитання щодо товару"/></label><p className="inquiry-note">Надсилаючи звернення, ви погоджуєтеся, що власник каталогу використає ці контактні дані лише для відповіді на ваш запит. Звернення не є замовленням і не передбачає оплату на сайті.</p><button className="btn primary full-btn" disabled={inquiryBusy} onClick={sendInquiry}>{inquiryBusy?'Надсилання…':'Надіслати звернення'}</button></div></div>}
   {authOpen&&<div className="overlay" onClick={()=>setAuthOpen(false)}><div className="modal auth-modal" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">AMAZONSAN ACCOUNT</span><h2>{authMode==='login'?'Вхід в акаунт':'Створити акаунт'}</h2></div><button className="icon-btn" onClick={()=>setAuthOpen(false)}><X/></button></div><label>Email<input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@email.com"/></label><label>Пароль<div className="password-field"><input type={showPassword?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Не менше 6 символів"/><button onClick={()=>setShowPassword(!showPassword)}>{showPassword?<EyeOff/>:<Eye/>}</button></div></label>{authError&&<p className="error">{authError}</p>}<button className="btn primary full-btn" onClick={signIn}>{authMode==='login'?'Увійти':'Зареєструватися'}</button><button className="btn google-btn full-btn" onClick={googleLogin}>G　 Продовжити з Google</button><p className="switch-auth">{authMode==='login'?'Ще не маєш акаунта?':'Вже маєш акаунт?'} <button onClick={()=>setAuthMode(authMode==='login'?'signup':'login')}>{authMode==='login'?'Реєстрація':'Увійти'}</button></p></div></div>}
