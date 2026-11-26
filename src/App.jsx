@@ -149,10 +149,16 @@ const [heroPaused,setHeroPaused]=useState(false)
    if(stockFilter!=='all')arr=arr.filter(p=>(p.stock_status||'in_stock')===stockFilter)
    if(onlyFav)arr=arr.filter(p=>favorites.includes(p.id))
    if(query.trim()){
-  const normalize=value=>String(value||'').toLocaleLowerCase('uk-UA').normalize('NFC')
-    .replace(/[’'`]/g,'')
-    .replace(/[^\p{L}\p{N}]+/gu,' ')
-    .trim()
+  const words=normalizeSearchText(query).split(/\s+/).filter(Boolean)
+  arr=arr.filter(p=>{
+    const text=normalizeSearchText([
+      p.title,p.brand,p.model,p.description,p.category,p.subcategory,p.sku
+    ].filter(Boolean).join(' '))
+    const tokens=text.split(/\s+/).filter(Boolean)
+    // Шукаємо ціле слово, а не довільний фрагмент іншого слова.
+    return words.every(word=>tokens.some(token=>token===word))
+  })
+}
   const words=normalize(query).split(/\s+/).filter(Boolean)
   arr=arr.filter(p=>{
     const text=normalize([p.title,p.brand,p.model,p.description,p.category,p.subcategory,p.sku]
