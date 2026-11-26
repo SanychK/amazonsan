@@ -362,17 +362,77 @@ const [heroPaused,setHeroPaused]=useState(false)
    try{const rows=JSON.parse(await file.text());if(!Array.isArray(rows))throw Error('Очікується JSON-масив товарів');const clean=rows.map(({id,created_at,...p})=>({...p,created_by:session.user.id}));const {error}=await supabase.from('products').insert(clean);if(error)throw error;await reloadProducts();notify('Імпорт завершено.')}catch(e){notify('Помилка імпорту: '+e.message)}
  }
  const setField=(k,v)=>setForm(f=>({...f,[k]:v}))
-  
-const generateAiDescription=async()=>{
-  if(!isAdmin||!session?.access_token){
+ 
+const generateAiDescription = async () => {
+  if (!isAdmin || !session?.access_token) {
     setAiError('Увійди в акаунт адміністратора.')
     return
   }
 
-  if(!form.title.trim()){
+  if (!form.title.trim()) {
     setAiError('Спочатку введи назву товару.')
     return
   }
+
+  if (!aiPurpose.trim() && !form.specs?.trim()) {
+    setAiError('Додай призначення або характеристики товару.')
+    return
+  }
+
+  setAiBusy(true)
+  setAiError('')
+
+  try {
+    const response = await fetch('/api/ai-description', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        title: form.title,
+        brand: form.brand,
+        model: aiModel || form.model,
+        purpose: aiPurpose,
+        specs: form.specs
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Не вдалося створити опис товару.')
+    }
+
+    if (!data.description?.trim()) {
+      throw new Error('AI не створив достовірний опис. Додай більше інформації.')
+    }
+
+    setField('description', data.description.trim())
+
+    if (typeof data.brand === 'string') {
+      setField('brand', data.brand)
+    }
+
+    if (typeof data.model === 'string') {
+      setField('model', data.model)
+      setAiModel(data.model)
+    }
+
+    if (typeof data.specs === 'string') {
+      setField('specs', data.specs)
+    }
+
+    notify('Опис і дані товару підготовлено. Перевір їх перед збереженням.')
+
+  } catch (error) {
+    setAiError(error.message || 'Помилка AI-помічника. Спробуй ще раз.')
+  } finally {
+    setAiBusy(false)
+  }
+}
+ 
+
 
   setAiBusy(true)
   setAiError('')
