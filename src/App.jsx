@@ -5,6 +5,12 @@ import {supabase, configured} from './supabase'
 
 const money = n => n == null || n === '' ? '—' : new Intl.NumberFormat('uk-UA',{style:'currency',currency:'UAH',maximumFractionDigits:0}).format(Number(n))
 const emptyForm = {title:'',brand:'',model:'',category:categories[0].name,subcategory:'',price_uah:'',original_price_uah:'',price_usd:'',description:'',image_url:'',amazon_url:'',sku:'',specs:'',is_new:true,is_popular:false,is_best_seller:false,is_recommended:false,is_exclusive:false,is_editor_pick:false,is_deal_of_day:false,stock_status:'in_stock',status:'published'}
+const normalizeSearchText = value => String(value || '')
+  .toLocaleLowerCase('uk-UA')
+  .normalize('NFC')
+  .replace(/[’'`]/g, '')
+  .replace(/[^\p{L}\p{N}]+/gu, ' ')
+  .trim()
 const categoryIcons = {
   'Електроніка': Smartphone,
   'Дім і кухня': House,
