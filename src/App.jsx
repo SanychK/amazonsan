@@ -431,54 +431,7 @@ const generateAiDescription = async () => {
     setAiBusy(false)
   }
 }
- 
-
-
-  setAiBusy(true)
-  setAiError('')
-
-  try{
-    const response=await fetch('/api/ai-description',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        Authorization:`Bearer ${session.access_token}`
-      },
-      body:JSON.stringify({
-        title:form.title,
-        model:aiModel,
-        purpose:aiPurpose,
-        specs:form.specs
-      })
-    })
-
-    const data=await response.json()
-
-    if(!response.ok){
-      const details=data.diagnostics
-        ? '\n\nДІАГНОСТИКА:\n'+JSON.stringify(data.diagnostics,null,2)
-        : ''
-
-      throw new Error(
-        (data.error||'Не вдалося створити опис товару.')+details
-      )
-    }
-
-    if(typeof data.description==='string'&&data.description.trim()){
-      setField('description',data.description.trim())
-      notify('Опис товару успішно створено. Перевір його перед збереженням.')
-    }else{
-      throw new Error('Не вдалося створити достовірний опис. Перевір вхідні дані.')
-    }
-
-  }catch(error){
-    setAiError(error.message||'Помилка AI-помічника. Спробуй ще раз.')
-  }finally{
-    setAiBusy(false)
-  }
-}
-
- const sendInquiry=async()=>{
+  const sendInquiry=async()=>{
    if(!selected)return
    if(!inquiryForm.name.trim()||!inquiryForm.contact.trim()){notify('Вкажи ім’я та телефон або email для зв’язку.');return}
    if(!configured){notify('Форма звернень запрацює після підключення Supabase.');return}
