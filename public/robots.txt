@@ -1,0 +1,5 @@
+
+User-agent: *
+Allow: /
+
+Sitemap: https://amazonsan.pages.dev/sitemap.xml
